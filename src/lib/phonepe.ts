@@ -30,7 +30,8 @@ async function postV1(args: PayArgs, instrument: Record<string, unknown>) {
       amount: args.amountPaise,
       redirectUrl: args.redirectUrl,
       redirectMode: "REDIRECT",
-      callbackUrl: args.callbackUrl ?? args.redirectUrl,
+      // The hosted PAY_PAGE is sent without a callbackUrl, exactly like the old site (the status page confirms the payment).
+      ...(instrument.type === "PAY_PAGE" ? {} : { callbackUrl: args.callbackUrl ?? args.redirectUrl }),
       paymentInstrument: instrument,
     }),
   ).toString("base64");
