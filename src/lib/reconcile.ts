@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/db";
 import { PaymentModel, PaymentRequestModel } from "@/models";
 import { getOrderStatus } from "@/lib/phonepe";
 import { sendPaymentEmails } from "@/lib/mail";
+import { whatsappPayment } from "@/lib/whatsapp-cloud";
 
 /**
  * Source of truth is PhonePe's order-status API, never the browser or the
@@ -24,14 +25,19 @@ export async function reconcilePayment(merchantOrderId: string) {
       { notified: true },
     );
     if (claimed) {
-      sendPaymentEmails({
-        name: payment.name,
-        email: payment.email,
-        merchantOrderId,
-        amount: payment.amount,
-        remarks: payment.remarks ?? undefined,
-        state: remote.state,
-      }).catch((e) => console.error("payment email failed", e));
+      // Awaited, so the serverless function is not frozen before the messages leave.
+      const [mail] = await Promise.allSettled([
+        sendPaymentEmails({
+          name: payment.name,
+          email: payment.email,
+          merchantOrderId,
+          amount: payment.amount,
+          remarks: payment.remarks ?? undefined,
+          state: remote.state,
+        }),
+        whatsappPayment({ name: payment.name, phone: payment.phone, merchantOrderId, amount: payment.amount, remarks: payment.remarks, state: remote.state }),
+      ]);
+      if (mail.status === "rejected") console.error("payment email failed", mail.reason);
     }
     payment.notified = true;
   }

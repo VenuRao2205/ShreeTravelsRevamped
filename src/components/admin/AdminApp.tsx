@@ -269,10 +269,44 @@ function Overview({ summary, range, goTo }: { summary: ReturnType<typeof useSumm
           </ul>
         )}
       </motion.section>
+      <WhatsAppCard />
     </div>
   );
 }
 
+
+function WhatsAppCard() {
+  const [st, setSt] = useState<{ configured: boolean; ownerSet: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => { fetch("/api/admin/whatsapp", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then(setSt).catch(() => setSt(null)); }, 0);
+    return () => clearTimeout(t);
+  }, []);
+  async function test() {
+    setBusy(true); setNote(null);
+    try {
+      const res = await fetch("/api/admin/whatsapp", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      setNote(res.ok ? { ok: true, text: "Test message sent. Check WhatsApp on your phone." } : { ok: false, text: data.error ?? "The test message failed." });
+    } catch { setNote({ ok: false, text: "The test message failed." }); }
+    setBusy(false);
+  }
+  if (!st) return null;
+  const ready = st.configured && st.ownerSet;
+  return (
+    <motion.section initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65, duration: 0.5 }} className="rounded-3xl border border-white/10 bg-ink-900 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-2xl"><MessageCircle size={22} className="text-accent" /> WhatsApp alerts</h2>
+          <p className="mt-1 text-neutral-400">{ready ? "Connected. New enquiries and payments message you, and paying customers get a receipt." : st.configured ? "Almost there. Add WHATSAPP_OWNER_NUMBER in the site settings to get alerts." : "Not set up. Add the WhatsApp settings in Netlify to turn on automatic messages."}</p>
+        </div>
+        {ready && <button onClick={test} disabled={busy} className="btn-ghost disabled:opacity-60">{busy && <Loader2 className="animate-spin" size={16} />} Send test message</button>}
+      </div>
+      {note && <p className={`mt-3 text-sm ${note.ok ? "text-accent" : "text-danger"}`} role="status">{note.text}</p>}
+    </motion.section>
+  );
+}
 
 function ListState({ loading, error, count, label, range }: { loading: boolean; error: string; count: number | null; label: string; range: Range }) {
   if (error) return <p className="text-danger" role="alert">{error}</p>;

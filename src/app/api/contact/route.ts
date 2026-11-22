@@ -3,6 +3,7 @@ import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { LeadModel } from "@/models";
 import { sendLeadEmails } from "@/lib/mail";
+import { whatsappNewEnquiry } from "@/lib/whatsapp-cloud";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -30,10 +31,8 @@ export async function POST(req: Request) {
   }
 
   // The lead is safely stored; an email failure must not fail the request.
-  try {
-    await sendLeadEmails({ ...data, email: data.email || undefined });
-  } catch (e) {
-    console.error("lead email failed", e instanceof Error ? e.message : e);
-  }
+  // Email and WhatsApp run side by side, and neither can stop the other.
+  const [mail] = await Promise.allSettled([sendLeadEmails({ ...data, email: data.email || undefined }), whatsappNewEnquiry(data)]);
+  if (mail.status === "rejected") console.error("lead email failed", mail.reason instanceof Error ? mail.reason.message : mail.reason);
   return NextResponse.json({ ok: true });
 }
