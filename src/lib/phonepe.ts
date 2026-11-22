@@ -26,7 +26,7 @@ async function postV1(args: PayArgs, instrument: Record<string, unknown>) {
     JSON.stringify({
       merchantId,
       merchantTransactionId: args.merchantOrderId,
-      merchantUserId: "SHREETRAVELSWEB",
+      merchantUserId: `MUID${Date.now()}`, // unique per payment, like the old site (a shared id can make PhonePe hide the QR)
       amount: args.amountPaise,
       redirectUrl: args.redirectUrl,
       redirectMode: "REDIRECT",
