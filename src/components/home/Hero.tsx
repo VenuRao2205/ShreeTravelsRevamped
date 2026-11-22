@@ -113,15 +113,15 @@ export default function Hero() {
 
       <div className="container-page relative z-10 flex min-h-[calc(100svh-69px)] flex-col justify-center py-16 lg:min-h-[calc(100svh-109px)]">
         <h1 className="text-[clamp(2.9rem,7.4vw,6.4rem)] leading-[0.92]">
-          <MaskLine delay={0.1}>Family-run cars,</MaskLine>
-          <MaskLine delay={0.22} className="text-outline">trusted by Nagpur</MaskLine>
+          <MaskLine delay={0.1}>Nagpur&rsquo;s trusted</MaskLine>
+          <MaskLine delay={0.22} className="text-outline">car partner</MaskLine>
           <MaskLine delay={0.34}>since {site.since}.</MaskLine>
         </h1>
 
         <Fade delay={0.7} className="mt-8 max-w-xl">
           <p className="text-lg text-neutral-300 sm:text-xl">
-            The Garde family has driven Nagpur&rsquo;s businesses for three decades. Airport transfers, staff
-            transport and executive cars, with chauffeurs we trust.
+            Trusted by Nagpur&rsquo;s businesses for three decades. Airport transfers, staff transport and
+            executive cars, with chauffeurs you can rely on.
           </p>
         </Fade>
 

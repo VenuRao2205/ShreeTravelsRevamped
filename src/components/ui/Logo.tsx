@@ -38,7 +38,7 @@ export default function Logo({ size = 44, tagline = false }: { size?: number; ta
         />
         {tagline && (
           <span className="mt-1 text-xs font-medium tracking-wide text-neutral-400">
-            A Nagpur family business since 1994
+            Trusted in Nagpur since 1994
           </span>
         )}
       </span>

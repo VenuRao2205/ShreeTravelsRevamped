@@ -15,8 +15,8 @@ export default function CTA() {
 
       <div className="container-page relative">
         <h2 className="text-[clamp(2.8rem,8vw,7rem)] leading-[0.92] text-black">
-          <MaskLine>Let our family</MaskLine>
-          <MaskLine delay={0.1}>drive yours.</MaskLine>
+          <MaskLine>Travel with a</MaskLine>
+          <MaskLine delay={0.1}>name you trust.</MaskLine>
         </h2>
         <Fade delay={0.3}>
           <a

@@ -21,7 +21,7 @@ export default function Why() {
               <div>
                 <h3 className="text-3xl">Three decades on the road</h3>
                 <p className="mt-3 max-w-md text-neutral-400">
-                  Corporate transport in Nagpur since {site.since}, built one trip at a time by the Garde family.
+                  Corporate transport in Nagpur since {site.since}, built one trip at a time.
                 </p>
               </div>
             </GlowArea>

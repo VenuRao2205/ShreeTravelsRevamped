@@ -6,7 +6,7 @@ import { site } from "@/lib/site";
 
 const trust = [
   { title: `Since ${site.since}`, text: "Over thirty years of corporate travel in Nagpur." },
-  { title: "One family, one name", text: "The Garde family runs Shree Travels and answers for every trip." },
+  { title: "Owners you can call", text: "The people who run Shree Travels answer for every trip." },
   { title: "Clear dealings", text: "Published rates, proper invoices and written policies." },
 ];
 
@@ -37,14 +37,13 @@ export default function Family({ headingLevel = "h2" }: { headingLevel?: "h1" | 
 
         <div>
           <H className="text-[clamp(2.4rem,5.5vw,4.5rem)]">
-            <MaskLine>Trusted by Nagpur,</MaskLine>
-            <MaskLine delay={0.1} className="text-outline">run by a family.</MaskLine>
+            <MaskLine>Built on trust,</MaskLine>
+            <MaskLine delay={0.1} className="text-outline">since {site.since}.</MaskLine>
           </H>
           <Fade delay={0.2}>
             <p className="mt-7 max-w-xl text-lg text-neutral-300">
-              Shree Travels started in Nagpur in {site.since} and is still run by the Garde family. When you call
-              or book, you deal with the people who own the business, and we look after your staff and guests as we
-              would our own.
+              Shree Travels started in Nagpur in {site.since}. Our promise is simple: we quote clearly,
+              send professional chauffeurs and stand behind every trip. When you call, you reach the people who run the business.
             </p>
           </Fade>
           <dl className="mt-10 grid gap-6 sm:grid-cols-3">

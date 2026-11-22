@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Shree Travels Nagpur",
   },
   description:
-    "Family-run corporate car rental in Nagpur, trusted since 1994. Airport transfers, employee transportation, executive travel and event cars.",
+    "Trusted corporate car rental in Nagpur since 1994. Airport transfers, employee transportation, executive travel and event cars.",
   openGraph: { type: "website", siteName: "Shree Travels", locale: "en_IN" },
   twitter: { card: "summary_large_image" },
 };
