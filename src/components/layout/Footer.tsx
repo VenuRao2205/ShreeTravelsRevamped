@@ -18,7 +18,7 @@ export default function Footer() {
         <div>
           <Logo size={56} tagline />
           <p className="mt-6 max-w-sm text-neutral-400">
-            Chauffeur-driven cars for Nagpur&rsquo;s businesses since {site.since}.
+            A family business trusted by Nagpur since {site.since}. Run by the Garde family.
           </p>
           <ul className="mt-6 space-y-3 text-neutral-300">
             <li className="flex items-start gap-3">

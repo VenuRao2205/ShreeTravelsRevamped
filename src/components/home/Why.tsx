@@ -9,7 +9,7 @@ export default function Why() {
       <div className="container-page relative">
         <h2 className="mb-14 max-w-3xl text-[clamp(2.4rem,5.5vw,4.5rem)]">
           <MaskLine>Why companies</MaskLine>
-          <MaskLine delay={0.1}>stay with us.</MaskLine>
+          <MaskLine delay={0.1}>trust us.</MaskLine>
         </h2>
 
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-[auto_auto_auto]">
@@ -21,7 +21,7 @@ export default function Why() {
               <div>
                 <h3 className="text-3xl">Three decades on the road</h3>
                 <p className="mt-3 max-w-md text-neutral-400">
-                  Corporate transport in Nagpur since {site.since}. Many of our clients have been with us for years.
+                  Corporate transport in Nagpur since {site.since}, built one trip at a time by the Garde family.
                 </p>
               </div>
             </GlowArea>

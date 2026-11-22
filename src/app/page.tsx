@@ -1,3 +1,4 @@
+import Family from "@/components/home/Family";
 import Hero from "@/components/home/Hero";
 import Marquee from "@/components/ui/Marquee";
 import ServiceRows from "@/components/home/ServiceRows";
@@ -12,6 +13,7 @@ export default function Home() {
     <main>
       <Hero />
       <Marquee items={serviceNames} />
+      <Family />
       <ServiceRows />
       <Why />
       <Fleet />
