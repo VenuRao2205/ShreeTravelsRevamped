@@ -45,6 +45,7 @@ const paymentRequestSchema = new Schema(
   {
     customerName: { type: String, required: true, trim: true },
     customerEmail: { type: String, required: true, trim: true, lowercase: true },
+    customerPhone: { type: String, trim: true },
     loginId: { type: String, required: true, unique: true, index: true },
     passwordHash: { type: String, required: true }, // scrypt, never the password itself
     expiresAt: { type: Date, required: true },

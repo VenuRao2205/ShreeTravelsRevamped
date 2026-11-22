@@ -2,17 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
-import { Check, CircleDollarSign, Inbox, LayoutDashboard, Loader2, Link2, LogOut, MessageSquareQuote, Star, Trash2, X } from "lucide-react";
+import { Check, CircleDollarSign, Inbox, LayoutDashboard, Loader2, Link2, LogOut, MessageCircle, MessageSquareQuote, Star, Trash2, X } from "lucide-react";
 import { CountUp } from "@/components/ui/motion";
 import { Stars } from "@/components/forms/Reviews";
+import { waLink } from "@/lib/whatsapp";
 import PaymentLinks from "@/components/admin/PaymentLinks";
 import { Chips, Pager, RangeBar, SearchBox, initialRange, rangeLabel, rangeParams, useDebounced, usePaged, type Range } from "@/components/admin/Filters";
 
 type Lead = { _id: string; name: string; email?: string; phone: string; service?: string; message: string; status: string; createdAt: string };
 type Review = { _id: string; name: string; company?: string; rating: number; comment: string; approved: boolean; createdAt: string };
-type Payment = { _id: string; merchantOrderId: string; name: string; email: string; amount: number; state: string; remarks?: string; createdAt: string };
+type Payment = { _id: string; merchantOrderId: string; name: string; email: string; phone?: string; amount: number; state: string; remarks?: string; createdAt: string };
 
 const when = (d: string) => new Date(d).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+const origin = () => (typeof window === "undefined" ? "" : window.location.origin);
+const leadText = (l: Lead) => `Hello ${l.name}, this is Shree Travels, Nagpur. Thank you for your enquiry${l.service ? ` about ${l.service}` : ""}. How can we help you?`;
+const payText = (p: Payment) => {
+  const amt = `Rs ${(p.amount / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const inv = p.remarks ? ` for invoice ${p.remarks}` : "";
+  return p.state === "COMPLETED"
+    ? `Hello ${p.name}, we have received your payment of ${amt}${inv}. Thank you! - Shree Travels`
+    : `Hello ${p.name}, your payment of ${amt}${inv} has not gone through yet. You can pay securely here: ${origin()}/payment - Shree Travels`;
+};
 const statuses = ["new", "contacted", "converted", "closed"];
 
 export default function AdminApp({ enabled, signedIn }: { enabled: boolean; signedIn: boolean }) {
@@ -309,6 +319,7 @@ function Leads({ range, onUnauthorized, onChanged }: TabProps) {
             <p className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-accent">
               <a href={`tel:${l.phone}`} className="hover:underline">{l.phone}</a>
               {l.email && <a href={`mailto:${l.email}`} className="break-all hover:underline">{l.email}</a>}
+              <a href={waLink(l.phone, leadText(l))} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:underline"><MessageCircle size={15} /> WhatsApp</a>
             </p>
           </article>
         ))}
@@ -391,9 +402,9 @@ function Payments({ range, onUnauthorized }: TabProps) {
       <ListState loading={list.loading} error={list.error} count={list.data ? list.data.total : null} label="payments" range={range} />
       {rows && rows.length > 0 && (
         <div className={`overflow-x-auto rounded-2xl border border-white/10 ${fade(list.loading)}`}>
-          <table className="w-full min-w-[40rem] text-left">
+          <table className="w-full min-w-[46rem] text-left">
             <thead className="bg-ink-800 text-sm text-neutral-400">
-              <tr><th className="p-4">Date</th><th className="p-4">Name</th><th className="p-4">Amount</th><th className="p-4">Status</th><th className="p-4">Invoice</th></tr>
+              <tr><th className="p-4">Date</th><th className="p-4">Name</th><th className="p-4">Amount</th><th className="p-4">Status</th><th className="p-4">Invoice</th><th className="p-4">Message</th></tr>
             </thead>
             <tbody>
               {rows.map((p) => (
@@ -403,6 +414,9 @@ function Payments({ range, onUnauthorized }: TabProps) {
                   <td className="p-4 font-display text-lg font-bold text-white">Rs {(p.amount / 100).toFixed(2)}</td>
                   <td className="p-4"><span className={`rounded-full px-3 py-1 text-sm font-semibold ${p.state === "COMPLETED" ? "bg-brand-500 text-black" : p.state === "FAILED" ? "bg-red-500/20 text-danger" : "bg-white/10 text-neutral-300"}`}>{p.state.toLowerCase()}</span></td>
                   <td className="break-all p-4 text-xs text-neutral-500"><div className="text-sm font-semibold text-white">{p.remarks || "-"}</div>{p.merchantOrderId}</td>
+                  <td className="p-4 text-sm">
+                    <a href={waLink(p.phone, payText(p))} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 whitespace-nowrap text-accent hover:underline"><MessageCircle size={15} /> {p.state === "COMPLETED" ? "Send receipt" : "Send reminder"}</a>
+                  </td>
                 </tr>
               ))}
             </tbody>

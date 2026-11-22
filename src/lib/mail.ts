@@ -122,3 +122,18 @@ export async function sendPaymentEmails(p: {
   }
   await sendAll(jobs);
 }
+
+/** Emails a customer the login for their invoice page. Throws if the mail server refuses it. */
+export async function sendPortalCredentials(o: { to: string; name: string; loginId: string; password: string; expiresAt: Date; link: string }) {
+  const until = o.expiresAt.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
+  await send({
+    to: o.to,
+    subject: "Your invoices and payment login - Shree Travels",
+    html: `<p>Hi ${esc(o.name)},</p>
+      <p>You can see and pay your invoices together on our website:</p>
+      <p><a href="${esc(o.link)}">${esc(o.link)}</a></p>
+      <p><b>Login ID:</b> ${esc(o.loginId)}<br><b>Password:</b> ${esc(o.password)}</p>
+      <p>This login works until ${until}. Payments are secure through PhonePe.</p>
+      <p>Shree Travels, Nagpur</p>`,
+  });
+}

@@ -2,25 +2,28 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, KeyRound, Loader2, Plus, Trash2, X } from "lucide-react";
+import { Check, Copy, KeyRound, Loader2, Mail, MessageCircle, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { waLink } from "@/lib/whatsapp";
 import { Chips, Pager, SearchBox, rangeLabel, rangeParams, useDebounced, usePaged, type Range } from "@/components/admin/Filters";
 
 export type PayRequest = {
-  _id: string; customerName: string; customerEmail: string; loginId: string; expiresAt: string; revoked: boolean; lockedUntil?: string;
+  _id: string; customerName: string; customerEmail: string; customerPhone?: string; loginId: string; expiresAt: string; revoked: boolean; lockedUntil?: string;
   invoices: { key: string; number: string; date: string; amount: number; status: "UNPAID" | "PAID" }[];
 };
 type Row = { number: string; date: string; amount: string };
-type Created = { name: string; loginId: string; password: string; expiresAt: string; total: number };
+type Cred = { id: string; name: string; email: string; phone?: string; loginId: string; password: string; expiresAt: string };
 
 const inr = (n: number) => `Rs ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const day = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 const today = () => new Date().toLocaleDateString("en-CA");
 const blank = (): Row => ({ number: "", date: today(), amount: "" });
-const dash = (v: string, g: number) => v.match(new RegExp(`.{1,${g}}`, "g"))?.join("-") ?? v;
+// No 0/O/1/I, so a password read out over the phone is not misheard.
+const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const generate = (n: number) => Array.from(crypto.getRandomValues(new Uint32Array(n)), (x) => ALPHA[x % ALPHA.length]).join("");
 
 export default function PaymentLinks({ range, onUnauthorized }: { range: Range; onUnauthorized: () => void }) {
   const [open, setOpen] = useState(false);
-  const [created, setCreated] = useState<Created | null>(null);
+  const [created, setCreated] = useState<Cred | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "paid" | "expired" | "stopped">("all");
   const dq = useDebounced(q.trim());
@@ -30,7 +33,7 @@ export default function PaymentLinks({ range, onUnauthorized }: { range: Range; 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-xl text-neutral-400">Add a customer and their invoices. We create a login for them. Share it, and they pay everything from the Payments page. Dates here are when the link was created.</p>
+        <p className="max-w-xl text-neutral-400">Add a customer and their invoices, and choose their login or let us generate one. Share it by email or WhatsApp, and they pay everything from the Payments page. Dates here are when the link was created.</p>
         {!open && <button onClick={() => { setOpen(true); setCreated(null); }} className="btn-primary"><Plus size={18} /> New payment link</button>}
       </div>
 
@@ -53,9 +56,12 @@ export default function PaymentLinks({ range, onUnauthorized }: { range: Range; 
   );
 }
 
-function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: Created) => void }) {
+function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: Cred) => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loginId, setLoginId] = useState("");
+  const [password, setPassword] = useState("");
   const [days, setDays] = useState("7");
   const [rows, setRows] = useState<Row[]>([blank()]);
   const [err, setErr] = useState("");
@@ -69,11 +75,15 @@ function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: 
     try {
       const res = await fetch("/api/admin/requests", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerName: name, customerEmail: email, expiryDays: Number(days) || 7, invoices: rows.map((r) => ({ number: r.number, date: r.date, amountRupees: Number(r.amount) })) }),
+        body: JSON.stringify({
+          customerName: name, customerEmail: email, customerPhone: phone || undefined,
+          loginId: loginId.trim() || undefined, password: password || undefined,
+          expiryDays: Number(days) || 7, invoices: rows.map((r) => ({ number: r.number, date: r.date, amountRupees: Number(r.amount) })),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not create the link.");
-      onCreated({ name, loginId: data.loginId, password: data.password, expiresAt: data.expiresAt, total });
+      onCreated({ id: data.id, name, email, phone: phone || undefined, loginId: data.loginId, password: data.password, expiresAt: data.expiresAt });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not create the link.");
     }
@@ -82,10 +92,26 @@ function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: 
 
   return (
     <motion.form onSubmit={submit} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-5 rounded-3xl border border-white/10 bg-ink-900 p-6 sm:p-8">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div><label className="field-label" htmlFor="cn">Customer name</label><input id="cn" className="field" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} /></div>
         <div><label className="field-label" htmlFor="ce">Customer email</label><input id="ce" type="email" className="field" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+        <div><label className="field-label" htmlFor="cp">WhatsApp number</label><input id="cp" type="tel" inputMode="tel" placeholder="Optional" className="field" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         <div><label className="field-label" htmlFor="cd">Valid for (days)</label><input id="cd" type="number" min={1} max={90} className="field" value={days} onChange={(e) => setDays(e.target.value)} /></div>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 p-4">
+        <p className="field-label">Customer login</p>
+        <p className="mb-3 text-sm text-neutral-500">Type your own, or leave both empty and we generate them. Use letters and numbers only. Capital or small letters both work when the customer signs in.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex gap-2">
+            <input aria-label="Login ID" placeholder="Login ID, 4 to 20 characters" autoComplete="off" spellCheck={false} className="field font-mono" value={loginId} onChange={(e) => setLoginId(e.target.value)} />
+            <button type="button" onClick={() => setLoginId(generate(8))} className="btn-ghost !px-3" aria-label="Generate a login ID" title="Generate"><RefreshCw size={16} /></button>
+          </div>
+          <div className="flex gap-2">
+            <input aria-label="Password" placeholder="Password, 6 to 30 characters" autoComplete="off" spellCheck={false} className="field font-mono" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <button type="button" onClick={() => setPassword(generate(10))} className="btn-ghost !px-3" aria-label="Generate a password" title="Generate"><RefreshCw size={16} /></button>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -113,34 +139,59 @@ function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: 
   );
 }
 
-function Credentials({ c, onClose, title = "Share this login with the customer" }: { c: { name: string; loginId?: string; password: string; expiresAt?: string; total?: number }; onClose: () => void; title?: string }) {
+function Credentials({ c, onClose, title = "Share this login with the customer" }: { c: Cred; onClose: () => void; title?: string }) {
   const [copied, setCopied] = useState(false);
+  const [mail, setMail] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [mailNote, setMailNote] = useState("");
   const site = typeof window !== "undefined" ? window.location.origin : "";
   const msg = [
     `Hello ${c.name},`,
     `You can see and pay your invoices here: ${site}/payment?tab=invoices`,
-    c.loginId ? `Login ID: ${c.loginId}` : "",
+    `Login ID: ${c.loginId}`,
     `Password: ${c.password}`,
-    c.expiresAt ? `Valid until ${day(c.expiresAt)}.` : "",
+    `Valid until ${day(c.expiresAt)}.`,
     "- Shree Travels",
-  ].filter(Boolean).join("\n");
-  async function copy() { try { await navigator.clipboard.writeText(msg); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* user can select the text */ } }
+  ].join("\n");
+  async function copy() { try { await navigator.clipboard.writeText(msg); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* the text above can be selected by hand */ } }
+  async function email() {
+    setMail("sending"); setMailNote("");
+    try {
+      const res = await fetch("/api/admin/requests/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: c.id, password: c.password }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "The email could not be sent.");
+      setMail("sent"); setMailNote(`Sent to ${data.to}`);
+    } catch (e) {
+      setMail("error"); setMailNote(e instanceof Error ? e.message : "The email could not be sent.");
+    }
+  }
   return (
     <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="rounded-3xl border border-brand-500/50 bg-brand-500/10 p-6 sm:p-8">
       <div className="flex items-start justify-between gap-4">
         <h3 className="text-2xl">{title}</h3>
         <button onClick={onClose} aria-label="Close" className="btn-ghost !p-2"><X size={16} /></button>
       </div>
-      <p className="mt-2 text-sm text-neutral-300">The password is shown only now. We store a scrambled copy, so it cannot be looked up later. You can reset it any time.</p>
+      <p className="mt-2 text-sm text-neutral-300">The password is shown only now. We store a scrambled copy, so it cannot be looked up later. You can set a new one any time.</p>
       <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-ink-900 p-5 font-mono text-sm text-white">{msg}</pre>
-      <button onClick={copy} className="btn-primary mt-4">{copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Copied" : "Copy message"}</button>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button onClick={copy} className="btn-primary">{copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Copied" : "Copy message"}</button>
+        <button onClick={email} disabled={mail === "sending"} className="btn-ghost disabled:opacity-60">
+          {mail === "sending" ? <Loader2 className="animate-spin" size={18} /> : mail === "sent" ? <Check size={18} /> : <Mail size={18} />} {mail === "sent" ? "Email sent" : "Send email"}
+        </button>
+        <a href={waLink(c.phone, msg)} target="_blank" rel="noopener noreferrer" className="btn-ghost"><MessageCircle size={18} /> Send on WhatsApp</a>
+      </div>
+      <p className="mt-3 text-sm text-neutral-400" aria-live="polite">
+        {mailNote ? <span className={mail === "error" ? "text-danger" : ""}>{mailNote}</span> : `Email goes to ${c.email}. ${c.phone ? "WhatsApp opens a chat with the number you entered." : "No WhatsApp number was added, so WhatsApp lets you pick the contact."}`}
+      </p>
     </motion.div>
   );
 }
 
 function Card({ r, reload }: { r: PayRequest; reload: () => void }) {
   const [busy, setBusy] = useState("");
-  const [pw, setPw] = useState<string | null>(null);
+  const [cred, setCred] = useState<Cred | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [custom, setCustom] = useState("");
+  const [err, setErr] = useState("");
   const paid = r.invoices.filter((i) => i.status === "PAID");
   const total = r.invoices.reduce((a, i) => a + i.amount, 0) / 100;
   const got = paid.reduce((a, i) => a + i.amount, 0) / 100;
@@ -148,13 +199,19 @@ function Card({ r, reload }: { r: PayRequest; reload: () => void }) {
   const done = paid.length === r.invoices.length;
   const state = r.revoked ? "Stopped" : done ? "Fully paid" : expired ? "Expired" : "Active";
 
-  async function act(action: string, days?: number) {
-    setBusy(action);
+  async function act(action: string, extra: Record<string, unknown> = {}) {
+    setBusy(action); setErr("");
     try {
-      const res = await fetch("/api/admin/requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r._id, action, days }) });
+      const res = await fetch("/api/admin/requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r._id, action, ...extra }) });
       const data = await res.json().catch(() => ({}));
-      if (action === "reset-password" && data.password) setPw(data.password);
+      if (!res.ok) throw new Error(data.error ?? "That did not work.");
+      if (action === "reset-password" && data.password) {
+        setCred({ id: r._id, name: r.customerName, email: r.customerEmail, phone: r.customerPhone, loginId: r.loginId, password: data.password, expiresAt: r.expiresAt });
+        setResetting(false); setCustom("");
+      }
       reload();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "That did not work.");
     } finally { setBusy(""); }
   }
   async function remove() {
@@ -169,7 +226,7 @@ function Card({ r, reload }: { r: PayRequest; reload: () => void }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-xl">{r.customerName}</h3>
-          <p className="text-sm text-neutral-500">{r.customerEmail} · Login {dash(r.loginId, 4)}</p>
+          <p className="text-sm text-neutral-500">{r.customerEmail}{r.customerPhone ? ` · ${r.customerPhone}` : ""} · Login {r.loginId}</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-sm font-semibold ${state === "Active" ? "bg-brand-500 text-black" : state === "Fully paid" ? "bg-brand-500/20 text-accent" : "bg-red-500/20 text-danger"}`}>{state}</span>
       </div>
@@ -187,12 +244,23 @@ function Card({ r, reload }: { r: PayRequest; reload: () => void }) {
       </ul>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button onClick={() => act("extend", 7)} disabled={!!busy} className="btn-ghost !py-2 text-sm">Extend 7 days</button>
-        <button onClick={() => act("reset-password")} disabled={!!busy} className="btn-ghost !py-2 text-sm"><KeyRound size={14} /> New password</button>
+        <button onClick={() => act("extend", { days: 7 })} disabled={!!busy} className="btn-ghost !py-2 text-sm">Extend 7 days</button>
+        <button onClick={() => setResetting((v) => !v)} disabled={!!busy} className="btn-ghost !py-2 text-sm"><KeyRound size={14} /> New password</button>
         {r.revoked ? <button onClick={() => act("restore")} disabled={!!busy} className="btn-ghost !py-2 text-sm">Restore</button> : <button onClick={() => act("revoke")} disabled={!!busy} className="btn-ghost !py-2 text-sm">Stop access</button>}
         <button onClick={remove} disabled={!!busy} className="btn-ghost !py-2 text-sm text-danger"><Trash2 size={14} /> Delete</button>
       </div>
-      <AnimatePresence>{pw && <div className="mt-4"><Credentials c={{ name: r.customerName, loginId: dash(r.loginId, 4), password: pw, expiresAt: r.expiresAt }} title="New password" onClose={() => setPw(null)} /></div>}</AnimatePresence>
+
+      <AnimatePresence>
+        {resetting && (
+          <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} onSubmit={(e) => { e.preventDefault(); act("reset-password", { password: custom || undefined }); }} className="mt-4 flex flex-wrap items-center gap-2 overflow-hidden">
+            <input aria-label="New password" placeholder="Type a password, or leave empty to generate" autoComplete="off" spellCheck={false} className="field !w-auto min-w-[16rem] flex-1 font-mono" value={custom} onChange={(e) => setCustom(e.target.value)} />
+            <button className="btn-primary !py-2.5 text-sm" disabled={!!busy}>{busy === "reset-password" && <Loader2 className="animate-spin" size={14} />} Set password</button>
+            <button type="button" onClick={() => { setResetting(false); setCustom(""); }} className="btn-ghost !py-2.5 text-sm">Cancel</button>
+          </motion.form>
+        )}
+      </AnimatePresence>
+      {err && <p className="mt-3 text-danger" role="alert">{err}</p>}
+      <AnimatePresence>{cred && <div className="mt-4"><Credentials c={cred} title="New password" onClose={() => setCred(null)} /></div>}</AnimatePresence>
     </motion.div>
   );
 }
