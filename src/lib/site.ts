@@ -8,7 +8,7 @@ export const site = {
   city: "Nagpur, Maharashtra",
   hours: "Mon-Sat: 10:00 AM - 10:00 PM",
   since: 1994,
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://shreetravels-ngp.netlify.app",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.shreetravelsnagpur.com",
 };
 
 export const navLinks = [

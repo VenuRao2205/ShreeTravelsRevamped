@@ -25,6 +25,7 @@ export const viewport: Viewport = { themeColor: "#F0F1F3" };
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
+  alternates: { canonical: "./" },
   title: {
     default: "Shree Travels Nagpur | Corporate Car Rental & Employee Transport",
     template: "%s | Shree Travels Nagpur",
