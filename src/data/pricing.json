@@ -1,0 +1,49 @@
+{
+  "updated": "2026-11-22",
+  "currency": "INR",
+  "notes": [
+    "Rates are for Nagpur local use with a chauffeur. Fuel and driver charges are included in package rates.",
+    "Outstation rates are per km with a minimum of 300 km per day.",
+    "Tolls, parking and state taxes outside the package are extra. Call to confirm the rate for your date."
+  ],
+  "vehicles": [
+    { "id": "dzire", "name": "Dzire A/C" },
+    { "id": "innova", "name": "Innova" },
+    { "id": "crysta", "name": "Innova Crysta" },
+    { "id": "corolla", "name": "Corolla" },
+    { "id": "fortuner", "name": "Fortuner" },
+    { "id": "mercedes", "name": "Mercedes" }
+  ],
+  "rows": [
+    {
+      "label": "8 hrs / 80 km",
+      "unit": "package",
+      "rates": { "dzire": 2250, "innova": 3200, "crysta": 3600, "corolla": null, "fortuner": 9000, "mercedes": 12000 }
+    },
+    {
+      "label": "10 hrs / 100 km",
+      "unit": "package",
+      "rates": { "dzire": 2250, "innova": 3200, "crysta": 3600, "corolla": null, "fortuner": 9000, "mercedes": 12000 }
+    },
+    {
+      "label": "12 hrs / 120 km",
+      "unit": "package",
+      "rates": { "dzire": 2750, "innova": 3700, "crysta": 4100, "corolla": null, "fortuner": 10800, "mercedes": 14000 }
+    },
+    {
+      "label": "Extra hour",
+      "unit": "per hour",
+      "rates": { "dzire": 250, "innova": 250, "crysta": 250, "corolla": null, "fortuner": 900, "mercedes": 1000 }
+    },
+    {
+      "label": "Outstation (min 300 km/day)",
+      "unit": "per km",
+      "rates": { "dzire": 13, "innova": 16, "crysta": 18, "corolla": null, "fortuner": 40, "mercedes": 60 }
+    },
+    {
+      "label": "Airport / station pick-up or drop",
+      "unit": "per trip",
+      "rates": { "dzire": 700, "innova": 1200, "crysta": null, "corolla": null, "fortuner": null, "mercedes": null }
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
+import PricingTable from "@/components/ui/PricingTable";
 import Fleet from "@/components/home/Fleet";
 import CTA from "@/components/home/CTA";
 import { Fade, MaskLine } from "@/components/ui/motion";
@@ -54,6 +55,12 @@ export default function ServicesPage() {
       </section>
 
       <Fleet />
+      <section className="bg-ink-900 py-20 sm:py-28">
+        <div className="container-page">
+          <h2 className="mb-10 text-[clamp(2.2rem,5vw,4rem)]">Our rates</h2>
+          <PricingTable />
+        </div>
+      </section>
 
       <section className="bg-ink-900 py-16 text-center">
         <div className="container-page">

@@ -15,6 +15,7 @@ export const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
+  { href: "/pricing", label: "Rates" },
   { href: "/reviews", label: "Reviews" },
   { href: "/payment", label: "Pay online" },
   { href: "/contact", label: "Contact" },

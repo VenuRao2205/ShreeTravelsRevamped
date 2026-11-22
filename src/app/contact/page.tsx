@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Clock, Mail, MapPin, Phone } from "lucide-react";
 import ContactForm from "@/components/forms/ContactForm";
 import PageHeader from "@/components/ui/PageHeader";
 import { Fade, Wipe } from "@/components/ui/motion";
@@ -43,13 +43,11 @@ export default function ContactPage() {
               ))}
             </ul>
             <Wipe>
-              <Image
-                src="/images/pricing.webp"
-                alt="Shree Travels rate card"
-                width={1248}
-                height={712}
-                className="w-full rounded-2xl border border-white/10"
-              />
+              <Link href="/pricing" className="group block rounded-2xl border border-white/10 bg-ink-900 p-6 transition-colors hover:border-brand-500">
+                <p className="font-display text-2xl font-bold text-white">See our rates</p>
+                <p className="mt-2 text-neutral-400">Packages, extra hours, outstation and airport transfers.</p>
+                <span className="mt-4 inline-flex items-center gap-2 font-semibold text-brand-400 group-hover:gap-3 transition-all">View rates <ArrowRight size={18} /></span>
+              </Link>
             </Wipe>
           </div>
         </div>
