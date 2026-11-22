@@ -22,14 +22,14 @@ export default function Family({ headingLevel = "h2" }: { headingLevel?: "h1" | 
             <div className="relative overflow-hidden rounded-[2rem] border-2 border-black">
               <Image
                 src="/images/family.webp"
-                alt="The Garde family of Shree Travels, Nagpur"
+                alt="Shree Travels team, Nagpur"
                 width={1100}
                 height={1462}
                 sizes="(min-width:1024px) 40vw, 90vw"
                 className="h-auto w-full"
               />
               <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-6 pt-16 font-display text-xl font-bold text-white">
-                The Garde family
+                Shree Travels, Nagpur
               </figcaption>
             </div>
           </figure>
