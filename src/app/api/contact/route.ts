@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     await connectDB();
     await LeadModel.create({ ...data, email: data.email || undefined });
   } catch (e) {
-    console.error("lead save failed", e);
+    console.error("lead save failed", e instanceof Error ? e.message : e);
     return NextResponse.json({ error: "Could not save your enquiry. Please call us." }, { status: 500 });
   }
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   try {
     await sendLeadEmails({ ...data, email: data.email || undefined });
   } catch (e) {
-    console.error("lead email failed", e);
+    console.error("lead email failed", e instanceof Error ? e.message : e);
   }
   return NextResponse.json({ ok: true });
 }
