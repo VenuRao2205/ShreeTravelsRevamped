@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, KeyRound, Loader2, Plus, Trash2, X } from "lucide-react";
+import { Chips, Pager, SearchBox, rangeLabel, rangeParams, useDebounced, usePaged, type Range } from "@/components/admin/Filters";
 
 export type PayRequest = {
   _id: string; customerName: string; customerEmail: string; loginId: string; expiresAt: string; revoked: boolean; lockedUntil?: string;
   invoices: { key: string; number: string; date: string; amount: number; status: "UNPAID" | "PAID" }[];
 };
-type L = { rows: PayRequest[] | null; error: string; reload: () => void };
 type Row = { number: string; date: string; amount: string };
 type Created = { name: string; loginId: string; password: string; expiresAt: string; total: number };
 
@@ -18,26 +18,37 @@ const today = () => new Date().toLocaleDateString("en-CA");
 const blank = (): Row => ({ number: "", date: today(), amount: "" });
 const dash = (v: string, g: number) => v.match(new RegExp(`.{1,${g}}`, "g"))?.join("-") ?? v;
 
-export default function PaymentLinks({ rows, error, reload }: L) {
+export default function PaymentLinks({ range, onUnauthorized }: { range: Range; onUnauthorized: () => void }) {
   const [open, setOpen] = useState(false);
   const [created, setCreated] = useState<Created | null>(null);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState<"all" | "active" | "paid" | "expired" | "stopped">("all");
+  const dq = useDebounced(q.trim());
+  const list = usePaged<{ rows: PayRequest[]; total: number }>("/api/admin/requests", { ...rangeParams(range), ...(dq && { q: dq }), ...(status !== "all" && { status }) }, onUnauthorized);
+  const rows = list.data?.rows ?? null;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-xl text-neutral-400">Add a customer and their invoices. We create a login for them. Share it, and they pay everything from the Payments page.</p>
+        <p className="max-w-xl text-neutral-400">Add a customer and their invoices. We create a login for them. Share it, and they pay everything from the Payments page. Dates here are when the link was created.</p>
         {!open && <button onClick={() => { setOpen(true); setCreated(null); }} className="btn-primary"><Plus size={18} /> New payment link</button>}
       </div>
 
       <AnimatePresence>
-        {open && !created && <Create key="form" onCancel={() => setOpen(false)} onCreated={(c) => { setCreated(c); setOpen(false); reload(); }} />}
+        {open && !created && <Create key="form" onCancel={() => setOpen(false)} onCreated={(c) => { setCreated(c); setOpen(false); list.reload(); }} />}
         {created && <Credentials key="creds" c={created} onClose={() => setCreated(null)} />}
       </AnimatePresence>
 
-      {error && <p className="text-danger">{error}</p>}
-      {rows === null && !error && <p className="text-neutral-400"><Loader2 className="mr-2 inline animate-spin" size={16} />Loading</p>}
-      {rows?.length === 0 && <p className="rounded-2xl border border-white/10 bg-ink-900 p-8 text-center text-neutral-400">No payment links yet. Create one to get started.</p>}
-      <div className="space-y-4">{rows?.map((r) => <Card key={r._id} r={r} reload={reload} />)}</div>
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchBox value={q} onChange={setQ} placeholder="Search customer, email, invoice or login ID" />
+        <Chips value={status} onChange={setStatus} options={[{ id: "all", label: "All" }, { id: "active", label: "Awaiting payment" }, { id: "paid", label: "Fully paid" }, { id: "expired", label: "Expired" }, { id: "stopped", label: "Stopped" }]} />
+      </div>
+
+      {list.error && <p className="text-danger" role="alert">{list.error}</p>}
+      {!list.data && !list.error && <p className="text-neutral-400"><Loader2 className="mr-2 inline animate-spin" size={16} />Loading</p>}
+      {list.data?.total === 0 && <p className="rounded-2xl border border-dashed border-white/20 p-8 text-center text-neutral-400">No payment links for {rangeLabel(range)}. Change the filters, pick a wider date range, or create a new link.</p>}
+      <div className={`space-y-4 transition-opacity ${list.loading ? "opacity-50" : ""}`}>{rows?.map((r) => <Card key={r._id} r={r} reload={list.reload} />)}</div>
+      {list.data && <Pager total={list.data.total} page={list.page} pageSize={list.pageSize} onPage={list.setPage} onPageSize={list.setPageSize} />}
     </div>
   );
 }

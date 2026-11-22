@@ -4,13 +4,22 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
 import { connectDB } from "@/lib/db";
 import { LeadModel } from "@/models";
+import { dateFilter, pageOf, parseList, rx } from "@/lib/admin-query";
 
-export async function GET() {
+export async function GET(req: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
+  const q = parseList(req);
+  if (!q) return NextResponse.json({ error: "Invalid filters" }, { status: 400 });
   await connectDB();
-  const leads = await LeadModel.find().sort({ createdAt: -1 }).limit(500).lean();
-  return NextResponse.json({ leads });
+  const filter: Record<string, unknown> = { ...dateFilter(q) };
+  if (q.status && ["new", "contacted", "converted", "closed"].includes(q.status)) filter.status = q.status;
+  if (q.q) filter.$or = ["name", "phone", "email", "message", "service"].map((f) => ({ [f]: rx(q.q!) }));
+  const [rows, total] = await Promise.all([
+    LeadModel.find(filter).sort({ createdAt: -1 }).skip(pageOf(q).skip).limit(q.pageSize).lean(),
+    LeadModel.countDocuments(filter),
+  ]);
+  return NextResponse.json({ rows, total, page: q.page, pageSize: q.pageSize });
 }
 
 const patch = z.object({ id: z.string(), status: z.enum(["new", "contacted", "converted", "closed"]) });

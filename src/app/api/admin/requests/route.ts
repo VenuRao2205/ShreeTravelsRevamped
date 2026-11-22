@@ -5,16 +5,37 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
 import { connectDB } from "@/lib/db";
 import { PaymentRequestModel } from "@/models";
+import { dateFilter, pageOf, parseList, rx } from "@/lib/admin-query";
 import { hashPassword, newLoginId, newPassword, pretty } from "@/lib/portal";
 
 const DAY = 86_400_000;
 
-export async function GET() {
+export async function GET(req: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
+  const q = parseList(req);
+  if (!q) return NextResponse.json({ error: "Invalid filters" }, { status: 400 });
   await connectDB();
-  const requests = await PaymentRequestModel.find().select("-passwordHash").sort({ createdAt: -1 }).limit(300).lean();
-  return NextResponse.json({ requests });
+  const filter: Record<string, unknown> = { ...dateFilter(q) };
+  if (q.q) {
+    const text = q.q;
+    const id = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    filter.$or = [
+      ...["customerName", "customerEmail", "invoices.number"].map((f) => ({ [f]: rx(text) })),
+      ...(id.length >= 3 ? [{ loginId: rx(id) }] : []),
+    ];
+  }
+  const unpaid = { invoices: { $elemMatch: { status: "UNPAID" } } };
+  const now = new Date();
+  if (q.status === "stopped") filter.revoked = true;
+  if (q.status === "paid") Object.assign(filter, { revoked: false, invoices: { $not: { $elemMatch: { status: "UNPAID" } } } });
+  if (q.status === "active") Object.assign(filter, { revoked: false, expiresAt: { $gte: now }, ...unpaid });
+  if (q.status === "expired") Object.assign(filter, { revoked: false, expiresAt: { $lt: now }, ...unpaid });
+  const [requests, total] = await Promise.all([
+    PaymentRequestModel.find(filter).select("-passwordHash").sort({ createdAt: -1 }).skip(pageOf(q).skip).limit(q.pageSize).lean(),
+    PaymentRequestModel.countDocuments(filter),
+  ]);
+  return NextResponse.json({ rows: requests, total, page: q.page, pageSize: q.pageSize });
 }
 
 const create = z.object({
