@@ -8,7 +8,7 @@ import { MaskLine } from "@/components/ui/motion";
 import { fleet, fleetTypes } from "@/lib/site";
 
 export default function Fleet() {
-  const [type, setType] = useState<(typeof fleetTypes)[number]["id"]>("hatchback");
+  const [type, setType] = useState<(typeof fleetTypes)[number]["id"]>("muv");
   const active = fleetTypes.find((t) => t.id === type)!;
   const cars = fleet.filter((c) => c.type === type);
 
