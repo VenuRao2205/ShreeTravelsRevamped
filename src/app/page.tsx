@@ -4,6 +4,7 @@ import Marquee from "@/components/ui/Marquee";
 import ServiceRows from "@/components/home/ServiceRows";
 import Why from "@/components/home/Why";
 import Fleet from "@/components/home/Fleet";
+import OnTheRoad from "@/components/home/OnTheRoad";
 import Steps from "@/components/home/Steps";
 import CTA from "@/components/home/CTA";
 import { serviceNames } from "@/lib/site";
@@ -17,6 +18,7 @@ export default function Home() {
       <ServiceRows />
       <Why />
       <Fleet />
+      <OnTheRoad />
       <Steps />
       <CTA />
     </main>
