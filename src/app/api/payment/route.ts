@@ -3,14 +3,15 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { connectDB } from "@/lib/db";
 import { PaymentModel } from "@/models";
-import { createPayment } from "@/lib/phonepe";
+import { createPayment, createQrPayment } from "@/lib/phonepe";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(200),
   phone: z.string().trim().max(20).optional(),
-  remarks: z.string().trim().max(200).optional(),
+  remarks: z.string().trim().min(1, "Invoice number is required").max(200), // invoice number
   amountRupees: z.number().min(1).max(500000),
+  mode: z.enum(["page", "qr"]).default("page"),
 });
 
 export async function POST(req: Request) {
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Please check the payment details." }, { status: 400 });
   }
-  const { amountRupees, ...rest } = parsed.data;
+  const { amountRupees, mode, ...rest } = parsed.data;
   const amountPaise = Math.round(amountRupees * 100); // amount is computed server-side only
   const merchantOrderId = `ST${randomUUID().replace(/-/g, "")}`; // 34 chars (PhonePe v1 allows 35)
   // Use the address the customer is actually on, so a wrong or stale env value can never send them to a dead page.
@@ -37,19 +38,31 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await createPayment({
+    const args = {
       merchantOrderId,
       amountPaise,
       callbackUrl: `${siteUrl}/api/payment/webhook`,
       redirectUrl: `${siteUrl}/payment/status?orderId=${merchantOrderId}`,
-    });
+    };
+    if (mode === "qr") {
+      const qr = await createQrPayment(args);
+      await PaymentModel.updateOne({ merchantOrderId }, { state: "PENDING", phonepeOrderId: qr.orderId });
+      return NextResponse.json({ orderId: merchantOrderId, qrData: qr.qrData });
+    }
+    const res = await createPayment(args);
     await PaymentModel.updateOne({ merchantOrderId }, { state: "PENDING", phonepeOrderId: res.orderId });
     return NextResponse.json({ redirectUrl: res.redirectUrl });
   } catch (e) {
     console.error("payment create failed (PhonePe)", e instanceof Error ? e.message : e);
     await PaymentModel.updateOne({ merchantOrderId }, { state: "FAILED" }).catch(() => {});
     return NextResponse.json(
-      { error: "The payment gateway did not accept the request. Please call us on " + "+91 98222 36802.", code: "GATEWAY" },
+      {
+        error:
+          mode === "qr"
+            ? "A QR code could not be created right now. Use the PhonePe button instead, or call us on +91 98222 36802."
+            : "The payment gateway did not accept the request. Please call us on +91 98222 36802.",
+        code: mode === "qr" ? "QR" : "GATEWAY",
+      },
       { status: 502 },
     );
   }

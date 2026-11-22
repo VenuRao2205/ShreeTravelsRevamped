@@ -18,7 +18,9 @@ export function verifyV1Callback(base64Response: string, header: string | null) 
   return header === xVerify(base64Response);
 }
 
-async function createPaymentV1(args: { merchantOrderId: string; amountPaise: number; redirectUrl: string; callbackUrl?: string }) {
+type PayArgs = { merchantOrderId: string; amountPaise: number; redirectUrl: string; callbackUrl?: string };
+
+async function postV1(args: PayArgs, instrument: Record<string, unknown>) {
   const merchantId = process.env.PHONEPE_MERCHANT_ID!;
   const payload = Buffer.from(
     JSON.stringify({
@@ -29,7 +31,7 @@ async function createPaymentV1(args: { merchantOrderId: string; amountPaise: num
       redirectUrl: args.redirectUrl,
       redirectMode: "REDIRECT",
       callbackUrl: args.callbackUrl ?? args.redirectUrl,
-      paymentInstrument: { type: "PAY_PAGE" },
+      paymentInstrument: instrument,
     }),
   ).toString("base64");
   const res = await fetch(`${V1_BASE()}/pg/v1/pay`, {
@@ -39,9 +41,43 @@ async function createPaymentV1(args: { merchantOrderId: string; amountPaise: num
     cache: "no-store",
   });
   const data = await res.json().catch(() => null);
-  const url = data?.data?.instrumentResponse?.redirectInfo?.url;
-  if (!res.ok || !url) throw new Error(`PhonePe v1 pay failed (${res.status} ${data?.code ?? "no code"})`);
+  if (!res.ok || !data?.success) throw new Error(`PhonePe v1 pay failed (${res.status} ${data?.code ?? "no code"})`);
+  return data.data?.instrumentResponse as Record<string, any> | undefined; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+async function createPaymentV1(args: PayArgs) {
+  const ir = await postV1(args, { type: "PAY_PAGE" });
+  const url = ir?.redirectInfo?.url;
+  if (!url) throw new Error("PhonePe v1 pay failed (no redirect url)");
   return { orderId: args.merchantOrderId, redirectUrl: url as string, state: "PENDING" };
+}
+
+async function createQrV1(args: PayArgs) {
+  const ir = await postV1(args, { type: "UPI_QR" });
+  const qrData = ir?.qrData ?? ir?.intentUrl;
+  if (!qrData) throw new Error("PhonePe v1 UPI_QR failed (no qr data)");
+  return { orderId: args.merchantOrderId, qrData: qrData as string, intentUrl: (ir?.intentUrl ?? null) as string | null };
+}
+
+/** Generates a UPI QR (Custom Checkout). Returns the string to encode as a QR image. */
+export async function createQrPayment(args: PayArgs): Promise<{ orderId: string; qrData: string; intentUrl: string | null }> {
+  if (isV1()) return createQrV1(args);
+  const token = await getToken();
+  const res = await fetch(`${PG_BASE()}/payments/v2/pay`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `O-Bearer ${token}` },
+    body: JSON.stringify({
+      merchantOrderId: args.merchantOrderId,
+      amount: args.amountPaise,
+      expireAfter: 600,
+      paymentFlow: { type: "PG", merchantUrls: { redirectUrl: args.redirectUrl }, paymentMode: { type: "UPI_QR" } },
+    }),
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => null);
+  const qrData = data?.qrData ?? data?.intentUrl;
+  if (!res.ok || !qrData) throw new Error(`PhonePe v2 UPI_QR failed (${res.status} ${data?.code ?? data?.errorCode ?? "no code"})`);
+  return { orderId: data.orderId ?? args.merchantOrderId, qrData, intentUrl: data.intentUrl ?? null };
 }
 
 async function getStatusV1(merchantOrderId: string): Promise<{ state: PhonePeState; orderId?: string }> {

@@ -29,6 +29,7 @@ export async function reconcilePayment(merchantOrderId: string) {
         email: payment.email,
         merchantOrderId,
         amount: payment.amount,
+        remarks: payment.remarks ?? undefined,
         state: remote.state,
       }).catch((e) => console.error("payment email failed", e));
     }

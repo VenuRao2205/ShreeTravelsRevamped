@@ -92,6 +92,7 @@ export async function sendPaymentEmails(p: {
   merchantOrderId: string;
   amount: number;
   state: string;
+  remarks?: string;
 }) {
   const rupees = (p.amount / 100).toFixed(2);
   const ok = p.state === "COMPLETED";
@@ -103,7 +104,7 @@ export async function sendPaymentEmails(p: {
           to: adminAddress(),
           subject: `Payment ${ok ? "received" : "failed"}: Rs ${rupees} from ${p.name}`,
           html: `<p><b>Order:</b> ${esc(p.merchantOrderId)}</p><p><b>Name:</b> ${esc(p.name)}</p>
-      <p><b>Amount:</b> Rs ${rupees}</p><p><b>Status:</b> ${esc(p.state)}</p>`,
+      <p><b>Invoice:</b> ${esc(p.remarks ?? "-")}</p><p><b>Amount:</b> Rs ${rupees}</p><p><b>Status:</b> ${esc(p.state)}</p>`,
         }),
     },
   ];
@@ -115,7 +116,7 @@ export async function sendPaymentEmails(p: {
           to: p.email,
           subject: "Payment receipt - Shree Travels",
           html: `<p>Hi ${esc(p.name)},</p><p>We received your payment of <b>Rs ${rupees}</b>
-        (order ${esc(p.merchantOrderId)}). Thank you!</p><p>Shree Travels, Nagpur</p>`,
+        for invoice <b>${esc(p.remarks ?? "-")}</b> (order ${esc(p.merchantOrderId)}). Thank you!</p><p>Shree Travels, Nagpur</p>`,
         }),
     });
   }
