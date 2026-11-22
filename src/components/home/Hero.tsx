@@ -55,7 +55,7 @@ export default function Hero() {
             id="route"
             d={ROUTE}
             fill="none"
-            stroke="#CDD0D5"
+            stroke="#DADDE2"
             strokeWidth={22}
             strokeLinecap="round"
             initial={reduce ? false : { pathLength: 0 }}

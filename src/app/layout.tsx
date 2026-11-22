@@ -21,7 +21,7 @@ const body = localFont({
   display: "swap",
 });
 
-export const viewport: Viewport = { themeColor: "#E4E6E9" };
+export const viewport: Viewport = { themeColor: "#F0F1F3" };
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),

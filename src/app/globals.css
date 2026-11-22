@@ -5,7 +5,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    background: #E4E6E9;
+    background: #F0F1F3;
     color-scheme: light;
   }
   body {
@@ -22,7 +22,7 @@
   ::selection { background: #FF6B00; color: #000; }
   :focus-visible { outline: 2px solid #FF8426; outline-offset: 3px; border-radius: 6px; }
   ::-webkit-scrollbar { width: 10px; }
-  ::-webkit-scrollbar-track { background: #E4E6E9; }
+  ::-webkit-scrollbar-track { background: #F0F1F3; }
   ::-webkit-scrollbar-thumb { background: #B0B4BA; border-radius: 10px; }
   ::-webkit-scrollbar-thumb:hover { background: #FF6B00; }
 }

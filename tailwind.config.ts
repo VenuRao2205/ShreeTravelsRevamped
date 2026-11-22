@@ -21,7 +21,7 @@ const config: Config = {
         },
         amber: { glow: "#FFB020" },
         // Light grey surfaces. Higher number = more raised (page < alt section < card < input).
-        ink: { DEFAULT: "#E4E6E9", 900: "#EEF0F2", 800: "#F6F7F8", 700: "#FFFFFF", 600: "#D3D6DB" },
+        ink: { DEFAULT: "#F0F1F3", 900: "#F8F9FA", 800: "#FFFFFF", 700: "#FFFFFF", 600: "#E1E4E8" },
         // `white` is the main text/border colour on the light theme, so text-white and border-white/10
         // read as dark ink. Use text-[#fff] where genuinely white text is needed (on photos, red).
         white: "#16181B",
