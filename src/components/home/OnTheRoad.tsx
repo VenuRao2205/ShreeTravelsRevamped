@@ -5,7 +5,6 @@ import { Pause, Play } from "lucide-react";
 import { Fade, MaskLine } from "@/components/ui/motion";
 
 const clips = [
-  { src: "/videos/fleet-lineup.mp4", poster: "/videos/fleet-lineup.jpg", title: "Ready at the pickup point", label: "Our cars and driver, lined up before a trip" },
   { src: "/videos/convoy.mp4", poster: "/videos/convoy.jpg", title: "Moving together", label: "A convoy of our cars on the road" },
 ];
 
@@ -71,7 +70,7 @@ function Clip({ src, poster, title, label }: (typeof clips)[number]) {
 export default function OnTheRoad() {
   return (
     <section className="py-24 sm:py-32">
-      <div className="container-page grid items-center gap-14 lg:grid-cols-[1fr_auto_auto] lg:gap-10">
+      <div className="container-page grid items-center gap-14 lg:grid-cols-[1fr_auto] lg:gap-16">
         <div className="max-w-md">
           <h2 className="text-[clamp(2.4rem,5.5vw,4.5rem)]">
             <MaskLine>Our cars,</MaskLine>
