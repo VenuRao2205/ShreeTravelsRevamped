@@ -3,7 +3,7 @@ import { reconcilePayment } from "@/lib/reconcile";
 
 export async function GET(req: Request) {
   const orderId = new URL(req.url).searchParams.get("orderId");
-  if (!orderId || !/^ST-[0-9a-f-]{36}$/.test(orderId)) {
+  if (!orderId || !/^ST(-[0-9a-f-]{36}|[0-9a-f]{32})$/.test(orderId)) {
     return NextResponse.json({ error: "Invalid order" }, { status: 400 });
   }
   try {

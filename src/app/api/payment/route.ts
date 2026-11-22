@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   }
   const { amountRupees, ...rest } = parsed.data;
   const amountPaise = Math.round(amountRupees * 100); // amount is computed server-side only
-  const merchantOrderId = `ST-${randomUUID()}`;
+  const merchantOrderId = `ST${randomUUID().replace(/-/g, "")}`; // 34 chars (PhonePe v1 allows 35)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
 
   try {
@@ -29,6 +29,7 @@ export async function POST(req: Request) {
     const res = await createPayment({
       merchantOrderId,
       amountPaise,
+      callbackUrl: `${siteUrl}/api/payment/webhook`,
       redirectUrl: `${siteUrl}/payment/status?orderId=${merchantOrderId}`,
     });
     await PaymentModel.updateOne(

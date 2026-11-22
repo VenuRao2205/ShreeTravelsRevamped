@@ -1,3 +1,66 @@
+import { createHash } from "crypto";
+
+// Two PhonePe API generations are supported, chosen by which credentials are set:
+//  - v2 Standard Checkout: PHONEPE_CLIENT_ID / PHONEPE_CLIENT_SECRET (OAuth)
+//  - v1 (Developer Settings > API Keys: merchant ID + salt key + key index): PHONEPE_MERCHANT_ID / PHONEPE_SALT_KEY
+// If PHONEPE_SALT_KEY is set, v1 is used.
+const isV1 = () => !!process.env.PHONEPE_SALT_KEY && !!process.env.PHONEPE_MERCHANT_ID;
+
+const V1_BASE = () =>
+  process.env.PHONEPE_ENV === "production" ? "https://api.phonepe.com/apis/hermes" : "https://api-preprod.phonepe.com/apis/pg-sandbox";
+const sha256 = (v: string) => createHash("sha256").update(v).digest("hex");
+const keyIndex = () => process.env.PHONEPE_SALT_INDEX ?? "1";
+const xVerify = (data: string) => `${sha256(data + process.env.PHONEPE_SALT_KEY)}###${keyIndex()}`;
+
+// v1 signature check for callbacks (body.response is base64 JSON).
+export function verifyV1Callback(base64Response: string, header: string | null) {
+  if (!process.env.PHONEPE_SALT_KEY || !header) return false;
+  return header === xVerify(base64Response);
+}
+
+async function createPaymentV1(args: { merchantOrderId: string; amountPaise: number; redirectUrl: string; callbackUrl?: string }) {
+  const merchantId = process.env.PHONEPE_MERCHANT_ID!;
+  const payload = Buffer.from(
+    JSON.stringify({
+      merchantId,
+      merchantTransactionId: args.merchantOrderId,
+      merchantUserId: "SHREETRAVELSWEB",
+      amount: args.amountPaise,
+      redirectUrl: args.redirectUrl,
+      redirectMode: "REDIRECT",
+      callbackUrl: args.callbackUrl ?? args.redirectUrl,
+      paymentInstrument: { type: "PAY_PAGE" },
+    }),
+  ).toString("base64");
+  const res = await fetch(`${V1_BASE()}/pg/v1/pay`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-VERIFY": xVerify(payload + "/pg/v1/pay"), accept: "application/json" },
+    body: JSON.stringify({ request: payload }),
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => null);
+  const url = data?.data?.instrumentResponse?.redirectInfo?.url;
+  if (!res.ok || !url) throw new Error(`PhonePe v1 pay failed (${res.status} ${data?.code ?? "no code"})`);
+  return { orderId: args.merchantOrderId, redirectUrl: url as string, state: "PENDING" };
+}
+
+async function getStatusV1(merchantOrderId: string): Promise<{ state: PhonePeState; orderId?: string }> {
+  const merchantId = process.env.PHONEPE_MERCHANT_ID!;
+  const path = `/pg/v1/status/${merchantId}/${encodeURIComponent(merchantOrderId)}`;
+  const res = await fetch(`${V1_BASE()}${path}`, {
+    headers: { "Content-Type": "application/json", "X-VERIFY": xVerify(path), "X-MERCHANT-ID": merchantId, accept: "application/json" },
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => null);
+  const code: string | undefined = data?.code;
+  if (code === "PAYMENT_SUCCESS") return { state: "COMPLETED", orderId: data?.data?.transactionId };
+  if (code === "PAYMENT_PENDING" || code === "TRANSACTION_NOT_FOUND") return { state: "PENDING" };
+  if (code === "PAYMENT_ERROR" || code === "PAYMENT_DECLINED" || code === "TIMED_OUT" || code === "PAYMENT_CANCELLED") {
+    return { state: "FAILED", orderId: data?.data?.transactionId };
+  }
+  throw new Error(`PhonePe v1 status failed (${res.status} ${code ?? "no code"})`);
+}
+
 // PhonePe Standard Checkout v2, called over REST (no SDK dependency).
 // Docs: https://developer.phonepe.com/payment-gateway/website-integration/standard-checkout/api-integration/api-integration-website
 
@@ -47,7 +110,9 @@ export async function createPayment(args: {
   amountPaise: number;
   redirectUrl: string;
   message?: string;
+  callbackUrl?: string;
 }): Promise<{ orderId: string; redirectUrl: string; state: string }> {
+  if (isV1()) return createPaymentV1(args);
   const token = await getToken();
   const res = await fetch(`${PG_BASE()}/checkout/v2/pay`, {
     method: "POST",
@@ -71,6 +136,7 @@ export async function createPayment(args: {
 export type PhonePeState = "PENDING" | "COMPLETED" | "FAILED";
 
 export async function getOrderStatus(merchantOrderId: string): Promise<{ state: PhonePeState; orderId?: string }> {
+  if (isV1()) return getStatusV1(merchantOrderId);
   const token = await getToken();
   const res = await fetch(
     `${PG_BASE()}/checkout/v2/order/${encodeURIComponent(merchantOrderId)}/status?details=false`,
