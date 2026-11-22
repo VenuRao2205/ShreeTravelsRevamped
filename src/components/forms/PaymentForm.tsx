@@ -18,7 +18,7 @@ const schema = z.object({
 type Input = z.input<typeof schema>;
 type Output = z.output<typeof schema>;
 
-type QrState = { orderId: string; qrData: string; amount: number; invoice: string };
+export type QrState = { orderId: string; qrData: string; amount: number; invoice: string };
 
 export default function PaymentForm() {
   const [error, setError] = useState("");
@@ -105,7 +105,7 @@ export default function PaymentForm() {
 }
 
 
-function QrPanel({ qr, onBack }: { qr: QrState; onBack: () => void }) {
+export function QrPanel({ qr, onBack, onDone }: { qr: QrState; onBack: () => void; onDone?: () => void }) {
   const [img, setImg] = useState("");
   const [state, setState] = useState<"WAIT" | "COMPLETED" | "FAILED" | "EXPIRED">("WAIT");
 
@@ -149,6 +149,7 @@ function QrPanel({ qr, onBack }: { qr: QrState; onBack: () => void }) {
           </p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             {bad && <button onClick={onBack} className="btn-primary">Try again</button>}
+            {done && onDone ? <button onClick={onDone} className="btn-primary">Back to my invoices</button> : null}
             <Link href="/" className="btn-ghost">Back to home</Link>
           </div>
         </>

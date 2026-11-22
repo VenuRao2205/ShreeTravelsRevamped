@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/db";
-import { PaymentModel } from "@/models";
+import { PaymentModel, PaymentRequestModel } from "@/models";
 import { getOrderStatus } from "@/lib/phonepe";
 import { sendPaymentEmails } from "@/lib/mail";
 
@@ -36,5 +36,14 @@ export async function reconcilePayment(merchantOrderId: string) {
     payment.notified = true;
   }
   await payment.save();
+
+  // A payment made from a customer's invoice login settles exactly the invoices it covered.
+  if (remote.state === "COMPLETED" && payment.requestId && payment.invoiceKeys?.length) {
+    await PaymentRequestModel.updateOne(
+      { _id: payment.requestId },
+      { $set: { "invoices.$[i].status": "PAID", "invoices.$[i].paidOrderId": merchantOrderId, "invoices.$[i].paidAt": new Date() } },
+      { arrayFilters: [{ "i.key": { $in: payment.invoiceKeys }, "i.status": "UNPAID" }] },
+    );
+  }
   return payment;
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import PaymentForm from "@/components/forms/PaymentForm";
+import PaymentTabs from "@/components/forms/PaymentTabs";
 import PageHeader from "@/components/ui/PageHeader";
 import { Fade } from "@/components/ui/motion";
 
@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 export default function PaymentPage() {
   return (
     <main>
-      <PageHeader lines={["Pay your", "invoice."]} intro="Enter the amount from your invoice and pay securely through PhonePe." />
+      <PageHeader lines={["Pay your", "invoice."]} intro="Pay one invoice with its amount, or sign in with the login we sent you to pay several invoices together. Payments are secure through PhonePe." />
       <section className="py-16 sm:py-24">
         <div className="container-page mx-auto max-w-2xl">
-          <Fade><PaymentForm /></Fade>
+          <Fade><PaymentTabs /></Fade>
         </div>
       </section>
     </main>

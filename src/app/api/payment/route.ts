@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { randomUUID } from "crypto";
-import { connectDB } from "@/lib/db";
-import { PaymentModel } from "@/models";
-import { createPayment, createQrPayment } from "@/lib/phonepe";
+import { startPayment } from "@/lib/start-payment";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -19,51 +16,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Please check the payment details." }, { status: 400 });
   }
-  const { amountRupees, mode, ...rest } = parsed.data;
-  const amountPaise = Math.round(amountRupees * 100); // amount is computed server-side only
-  const merchantOrderId = `ST${randomUUID().replace(/-/g, "")}`; // 34 chars (PhonePe v1 allows 35)
-  // Use the address the customer is actually on, so a wrong or stale env value can never send them to a dead page.
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  const siteUrl = host && !host.startsWith("localhost") ? `https://${host}` : (process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin);
-
-  try {
-    await connectDB();
-    await PaymentModel.create({ merchantOrderId, amount: amountPaise, ...rest });
-  } catch (e) {
-    console.error("payment save failed (database)", e instanceof Error ? e.message : e);
-    return NextResponse.json(
-      { error: "We could not reach our database. Please try again shortly or call us.", code: "DB" },
-      { status: 503 },
-    );
-  }
-
-  try {
-    const args = {
-      merchantOrderId,
-      amountPaise,
-      callbackUrl: `${siteUrl}/api/payment/webhook`,
-      redirectUrl: `${siteUrl}/payment/status?orderId=${merchantOrderId}`,
-    };
-    if (mode === "qr") {
-      const qr = await createQrPayment(args);
-      await PaymentModel.updateOne({ merchantOrderId }, { state: "PENDING", phonepeOrderId: qr.orderId });
-      return NextResponse.json({ orderId: merchantOrderId, qrData: qr.qrData });
-    }
-    const res = await createPayment(args);
-    await PaymentModel.updateOne({ merchantOrderId }, { state: "PENDING", phonepeOrderId: res.orderId });
-    return NextResponse.json({ redirectUrl: res.redirectUrl });
-  } catch (e) {
-    console.error("payment create failed (PhonePe)", e instanceof Error ? e.message : e);
-    await PaymentModel.updateOne({ merchantOrderId }, { state: "FAILED" }).catch(() => {});
-    return NextResponse.json(
-      {
-        error:
-          mode === "qr"
-            ? "A QR code could not be created right now. Use the PhonePe button instead, or call us on +91 98222 36802."
-            : "The payment gateway did not accept the request. Please call us on +91 98222 36802.",
-        code: mode === "qr" ? "QR" : "GATEWAY",
-      },
-      { status: 502 },
-    );
-  }
+  const { amountRupees, ...rest } = parsed.data;
+  const r = await startPayment({ req, ...rest, amountPaise: Math.round(amountRupees * 100) }); // amount is computed server-side only
+  return NextResponse.json(r.body, { status: r.status });
 }

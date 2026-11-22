@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
-import { Check, CircleDollarSign, Inbox, LayoutDashboard, Loader2, LogOut, MessageSquareQuote, Star, Trash2, X } from "lucide-react";
+import { Check, CircleDollarSign, Inbox, LayoutDashboard, Loader2, Link2, LogOut, MessageSquareQuote, Star, Trash2, X } from "lucide-react";
 import { CountUp } from "@/components/ui/motion";
 import { Stars } from "@/components/forms/Reviews";
+import PaymentLinks, { type PayRequest } from "@/components/admin/PaymentLinks";
 
 type Lead = { _id: string; name: string; email?: string; phone: string; service?: string; message: string; status: string; createdAt: string };
 type Review = { _id: string; name: string; company?: string; rating: number; comment: string; approved: boolean; createdAt: string };
@@ -76,12 +77,13 @@ function useList<T>(url: string, key: string, onUnauthorized: () => void) {
   return { rows, error, reload: load };
 }
 
-type Tab = "overview" | "leads" | "reviews" | "payments";
+type Tab = "overview" | "leads" | "reviews" | "payments" | "links";
 const tabs: { id: Tab; label: string; icon: typeof Inbox }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "leads", label: "Enquiries", icon: Inbox },
   { id: "reviews", label: "Reviews", icon: MessageSquareQuote },
   { id: "payments", label: "Payments", icon: CircleDollarSign },
+  { id: "links", label: "Payment links", icon: Link2 },
 ];
 
 function Dashboard({ onLogout }: { onLogout: () => void }) {
@@ -89,6 +91,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const leads = useList<Lead>("/api/admin/leads", "leads", onLogout);
   const reviews = useList<Review>("/api/admin/reviews", "reviews", onLogout);
   const payments = useList<Payment>("/api/admin/payments", "payments", onLogout);
+  const links = useList<PayRequest>("/api/admin/requests", "requests", onLogout);
   async function logout() { await fetch("/api/admin/logout", { method: "POST" }); onLogout(); }
   const pending = reviews.rows?.filter((r) => !r.approved).length ?? 0;
   const fresh = leads.rows?.filter((l) => l.status === "new").length ?? 0;
@@ -115,6 +118,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           {tab === "leads" && <Leads {...leads} />}
           {tab === "reviews" && <Reviews {...reviews} />}
           {tab === "payments" && <Payments {...payments} />}
+          {tab === "links" && <PaymentLinks {...links} />}
         </motion.div>
       </AnimatePresence>
     </div>
