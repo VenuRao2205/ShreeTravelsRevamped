@@ -2,26 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+html {
+  scroll-behavior: smooth;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
   }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-semibold transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500;
+  }
+  .btn-accent {
+    @apply btn bg-accent-400 text-primary-900 hover:bg-accent-500 focus-visible:ring-accent-400;
+  }
+  .btn-outline {
+    @apply btn border-2 border-white/80 text-white hover:bg-white hover:text-primary-900;
+  }
+  .card {
+    @apply rounded-2xl bg-white p-6 shadow-card;
   }
 }
