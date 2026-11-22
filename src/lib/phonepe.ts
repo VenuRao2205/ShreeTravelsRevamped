@@ -90,6 +90,7 @@ async function getStatusV1(merchantOrderId: string): Promise<{ state: PhonePeSta
   });
   const data = await res.json().catch(() => null);
   const code: string | undefined = data?.code;
+  console.log(`phonepe v1 status ${merchantOrderId}: http ${res.status} code ${code} responseCode ${data?.data?.responseCode} state ${data?.data?.state} msg ${data?.message}`);
   if (code === "PAYMENT_SUCCESS") return { state: "COMPLETED", orderId: data?.data?.transactionId };
   if (code === "PAYMENT_PENDING" || code === "TRANSACTION_NOT_FOUND") return { state: "PENDING" };
   if (code === "PAYMENT_ERROR" || code === "PAYMENT_DECLINED" || code === "TIMED_OUT" || code === "PAYMENT_CANCELLED") {
