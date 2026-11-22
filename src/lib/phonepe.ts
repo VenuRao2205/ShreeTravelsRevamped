@@ -35,7 +35,10 @@ async function getToken(): Promise<string> {
   });
   if (!res.ok) throw new Error(`PhonePe auth failed (${res.status})`);
   const data = await res.json();
-  tokenCache = { token: data.access_token, expiresAt: data.expires_at * 1000 };
+  // PhonePe's docs call expires_at both an epoch timestamp and a number of seconds; handle either.
+  const exp = Number(data.expires_at);
+  const expiresAt = exp > 1e9 ? exp * 1000 : Date.now() + exp * 1000;
+  tokenCache = { token: data.access_token, expiresAt };
   return tokenCache.token;
 }
 
