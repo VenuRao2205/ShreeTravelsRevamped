@@ -21,7 +21,9 @@ export async function POST(req: Request) {
   const { amountRupees, ...rest } = parsed.data;
   const amountPaise = Math.round(amountRupees * 100); // amount is computed server-side only
   const merchantOrderId = `ST${randomUUID().replace(/-/g, "")}`; // 34 chars (PhonePe v1 allows 35)
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
+  // Use the address the customer is actually on, so a wrong or stale env value can never send them to a dead page.
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  const siteUrl = host && !host.startsWith("localhost") ? `https://${host}` : (process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin);
 
   try {
     await connectDB();
