@@ -26,19 +26,29 @@ export async function POST(req: Request) {
   try {
     await connectDB();
     await PaymentModel.create({ merchantOrderId, amount: amountPaise, ...rest });
+  } catch (e) {
+    console.error("payment save failed (database)", e instanceof Error ? e.message : e);
+    return NextResponse.json(
+      { error: "We could not reach our database. Please try again shortly or call us.", code: "DB" },
+      { status: 503 },
+    );
+  }
+
+  try {
     const res = await createPayment({
       merchantOrderId,
       amountPaise,
       callbackUrl: `${siteUrl}/api/payment/webhook`,
       redirectUrl: `${siteUrl}/payment/status?orderId=${merchantOrderId}`,
     });
-    await PaymentModel.updateOne(
-      { merchantOrderId },
-      { state: "PENDING", phonepeOrderId: res.orderId },
-    );
+    await PaymentModel.updateOne({ merchantOrderId }, { state: "PENDING", phonepeOrderId: res.orderId });
     return NextResponse.json({ redirectUrl: res.redirectUrl });
   } catch (e) {
-    console.error("payment create failed", e);
-    return NextResponse.json({ error: "Could not start the payment. Please try again." }, { status: 502 });
+    console.error("payment create failed (PhonePe)", e instanceof Error ? e.message : e);
+    await PaymentModel.updateOne({ merchantOrderId }, { state: "FAILED" }).catch(() => {});
+    return NextResponse.json(
+      { error: "The payment gateway did not accept the request. Please call us on " + "+91 98222 36802.", code: "GATEWAY" },
+      { status: 502 },
+    );
   }
 }
