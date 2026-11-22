@@ -32,7 +32,7 @@ export const services = [
     slug: "corporate-car-rental",
     title: "Corporate car rental",
     blurb: "Hourly, daily and monthly cars with professional chauffeurs, billed to your company.",
-    points: ["Hourly, daily and monthly options", "Hatchback to SUV", "Professional chauffeurs", "Competitive pricing"],
+    points: ["Hourly, daily and monthly options", "Hatchback to MUV", "Professional chauffeurs", "Competitive pricing"],
   },
   {
     slug: "employee-transportation",
@@ -68,10 +68,19 @@ export const services = [
 
 export const serviceNames = services.map((s) => s.title);
 
-export const vehicles = [
-  { name: "Hatchback", image: "/images/car1.webp", seats: "4 passengers", text: "City rides and short distances.", tags: ["AC", "GPS", "Professional driver"] },
-  { name: "Sedan", image: "/images/car2.webp", seats: "4 passengers", text: "Business meetings and airport transfers.", tags: ["AC", "GPS", "Professional driver", "Spacious"] },
-  { name: "SUV", image: "/images/car3.webp", seats: "6-7 passengers", text: "Group travel and executive transport.", tags: ["AC", "GPS", "Professional driver", "Premium comfort"] },
+export const fleetTypes = [
+  { id: "hatchback", name: "Hatchback", text: "City rides and short distances." },
+  { id: "sedan", name: "Sedan", text: "Business meetings and airport transfers." },
+  { id: "muv", name: "MUV", text: "Group travel and executive transport." },
+] as const;
+
+export const fleet = [
+  { type: "hatchback", name: "Tata Tigor", image: "/cars/tigor.webp", seats: "4 passengers" },
+  { type: "sedan", name: "Toyota Etios", image: "/cars/etios.webp", seats: "4 passengers" },
+  { type: "sedan", name: "Maruti Swift Dzire", image: "/cars/dzire.webp", seats: "4 passengers" },
+  { type: "muv", name: "Toyota Innova Crysta", image: "/cars/crysta.webp", seats: "6-7 passengers" },
+  { type: "muv", name: "Toyota Innova Hycross", image: "/cars/hycross.webp", seats: "6-7 passengers" },
+  { type: "muv", name: "Kia Carens", image: "/cars/carens.webp", seats: "6-7 passengers" },
 ] as const;
 
 export const stats = [
