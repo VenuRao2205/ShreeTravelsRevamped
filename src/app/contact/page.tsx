@@ -34,7 +34,7 @@ export default function ContactPage() {
                   <div>
                     <p className="font-display text-lg font-bold text-white">{i.label}</p>
                     {i.href ? (
-                      <a href={i.href} className="break-all text-neutral-300 hover:text-brand-700">{i.value}</a>
+                      <a href={i.href} className="break-all text-neutral-300 hover:text-accent">{i.value}</a>
                     ) : (
                       <p className="text-neutral-300">{i.value}</p>
                     )}
@@ -46,7 +46,7 @@ export default function ContactPage() {
               <Link href="/pricing" className="group block rounded-2xl border border-white/10 bg-ink-900 p-6 transition-colors hover:border-brand-500">
                 <p className="font-display text-2xl font-bold text-white">See our rates</p>
                 <p className="mt-2 text-neutral-400">Packages, extra hours, outstation and airport transfers.</p>
-                <span className="mt-4 inline-flex items-center gap-2 font-semibold text-brand-700 group-hover:gap-3 transition-all">View rates <ArrowRight size={18} /></span>
+                <span className="mt-4 inline-flex items-center gap-2 font-semibold text-accent group-hover:gap-3 transition-all">View rates <ArrowRight size={18} /></span>
               </Link>
             </Wipe>
           </div>

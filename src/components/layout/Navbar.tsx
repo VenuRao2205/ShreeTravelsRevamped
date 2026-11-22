@@ -1,5 +1,6 @@
 "use client";
 
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -32,10 +33,10 @@ export default function Navbar() {
       <div className="hidden border-b border-white/10 bg-ink text-sm text-neutral-400 lg:block">
         <div className="container-page flex items-center justify-between py-2">
           <div className="flex items-center gap-7">
-            <a href={site.phoneHref} className="flex items-center gap-2 hover:text-brand-700">
+            <a href={site.phoneHref} className="flex items-center gap-2 hover:text-accent">
               <Phone size={14} className="text-brand-500" /> {site.phone}
             </a>
-            <a href={`mailto:${site.email}`} className="flex items-center gap-2 hover:text-brand-700">
+            <a href={`mailto:${site.email}`} className="flex items-center gap-2 hover:text-accent">
               <Mail size={14} className="text-brand-500" /> {site.email}
             </a>
             <span className="flex items-center gap-2">
@@ -82,9 +83,12 @@ export default function Navbar() {
             ))}
           </ul>
 
-          <Link href="/contact" className="btn-primary hidden !py-2.5 lg:inline-flex">
-            Get a quote
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle className="!h-10 !w-10" />
+            <Link href="/contact" className="btn-primary hidden !py-2.5 lg:inline-flex">
+              Get a quote
+            </Link>
+          </div>
 
           <button
             type="button"

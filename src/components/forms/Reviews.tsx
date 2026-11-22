@@ -142,7 +142,7 @@ export function ReviewForm() {
             <label htmlFor="r-comment" className="field-label">Your review</label>
             <textarea id="r-comment" rows={5} className="field resize-y" placeholder="How was the car, the driver and the timing?" {...register("comment")} />
           </div>
-          {error && <p className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-700" role="alert">{error}</p>}
+          {error && <p className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-danger" role="alert">{error}</p>}
           <button type="submit" disabled={isSubmitting} className="btn-primary w-full disabled:opacity-60">
             {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <MessageSquarePlus size={20} />}
             {isSubmitting ? "Sending" : "Submit review"}

@@ -43,7 +43,7 @@ export default function ContactForm() {
     }
   }
 
-  const err = (m?: string) => (m ? <p className="mt-1.5 text-sm text-red-700" role="alert">{m}</p> : null);
+  const err = (m?: string) => (m ? <p className="mt-1.5 text-sm text-danger" role="alert">{m}</p> : null);
 
   return (
     <AnimatePresence mode="wait">
@@ -113,7 +113,7 @@ export default function ContactForm() {
             {err(errors.message?.message)}
           </div>
 
-          {error && <p className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-700" role="alert">{error}</p>}
+          {error && <p className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-danger" role="alert">{error}</p>}
 
           <button type="submit" disabled={isSubmitting} className="btn-primary w-full text-lg disabled:opacity-60">
             {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
