@@ -19,10 +19,16 @@ function transport() {
 }
 
 async function send(opts: { to: string; subject: string; html: string; replyTo?: string }) {
-  await transport().sendMail({
-    from: `"Shree Travels" <${process.env.SMTP_USER}>`,
-    ...opts,
-  });
+  try {
+    await transport().sendMail({
+      from: `"Shree Travels" <${process.env.SMTP_USER}>`,
+      ...opts,
+    });
+  } catch (e) {
+    // Include addresses so the log shows exactly which one the mail server refused.
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`${msg} [from=${process.env.SMTP_USER} to=${opts.to} replyTo=${opts.replyTo ?? "-"}]`);
+  }
 }
 
 async function sendAll(jobs: { label: string; run: () => Promise<void> }[]) {
