@@ -26,7 +26,7 @@ export default function Hero() {
 
   return (
     <section
-      className="grain relative isolate overflow-hidden bg-black"
+      className="grain relative isolate overflow-hidden bg-ink"
       onPointerMove={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
         e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
@@ -55,7 +55,7 @@ export default function Hero() {
             id="route"
             d={ROUTE}
             fill="none"
-            stroke="#161616"
+            stroke="#CDD0D5"
             strokeWidth={22}
             strokeLinecap="round"
             initial={reduce ? false : { pathLength: 0 }}
@@ -84,7 +84,7 @@ export default function Hero() {
               transition={{ delay: START + s.at * DRAW, type: "spring", stiffness: 260, damping: 16 }}
             >
               <circle cx={s.x} cy={s.y} r={9} fill="#FF6B00" className="animate-ping2" style={{ transformBox: "fill-box", transformOrigin: "center" }} />
-              <circle cx={s.x} cy={s.y} r={8} fill="#000" stroke="#FF6B00" strokeWidth={3} />
+              <circle cx={s.x} cy={s.y} r={8} fill="#fff" stroke="#FF6B00" strokeWidth={3} />
               <text x={s.lx} y={s.ly} textAnchor={s.anchor} className="fill-white font-display" fontSize={19} fontWeight={800}>
                 {s.name}
               </text>

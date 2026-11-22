@@ -29,13 +29,13 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50">
-      <div className="hidden border-b border-white/10 bg-black text-sm text-neutral-400 lg:block">
+      <div className="hidden border-b border-white/10 bg-ink text-sm text-neutral-400 lg:block">
         <div className="container-page flex items-center justify-between py-2">
           <div className="flex items-center gap-7">
-            <a href={site.phoneHref} className="flex items-center gap-2 hover:text-brand-400">
+            <a href={site.phoneHref} className="flex items-center gap-2 hover:text-brand-700">
               <Phone size={14} className="text-brand-500" /> {site.phone}
             </a>
-            <a href={`mailto:${site.email}`} className="flex items-center gap-2 hover:text-brand-400">
+            <a href={`mailto:${site.email}`} className="flex items-center gap-2 hover:text-brand-700">
               <Mail size={14} className="text-brand-500" /> {site.email}
             </a>
             <span className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export default function Navbar() {
       <nav
         aria-label="Main"
         className={`border-b transition-all duration-300 ${
-          scrolled ? "border-white/10 bg-black/80 backdrop-blur-xl" : "border-transparent bg-black"
+          scrolled ? "border-white/10 bg-ink/80 backdrop-blur-xl" : "border-transparent bg-ink"
         }`}
       >
         <div className="container-page flex items-center justify-between py-3">
@@ -101,7 +101,7 @@ export default function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-x-0 bottom-0 top-[69px] z-40 overflow-y-auto bg-black lg:hidden"
+            className="fixed inset-x-0 bottom-0 top-[69px] z-40 overflow-y-auto bg-ink lg:hidden"
             initial={{ clipPath: "circle(0% at 92% 0%)" }}
             animate={{ clipPath: "circle(150% at 92% 0%)" }}
             exit={{ clipPath: "circle(0% at 92% 0%)" }}

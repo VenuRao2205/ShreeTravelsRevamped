@@ -5,7 +5,7 @@ import { vehicles } from "@/lib/site";
 
 export default function Fleet() {
   return (
-    <section className="bg-black py-24 sm:py-32">
+    <section className="bg-ink py-24 sm:py-32">
       <div className="container-page">
         <h2 className="mb-14 max-w-3xl text-[clamp(2.4rem,5.5vw,4.5rem)]">
           <MaskLine>Hatchback, sedan</MaskLine>

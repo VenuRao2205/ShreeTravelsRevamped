@@ -6,7 +6,7 @@ import { legalLinks, navLinks, serviceNames, site } from "@/lib/site";
 export default function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-black">
+    <footer className="relative overflow-hidden border-t border-white/10 bg-ink">
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-[4vw] left-1/2 -translate-x-1/2 select-none whitespace-nowrap font-display text-[22vw] font-extrabold leading-none text-outline opacity-[0.07]"
@@ -26,11 +26,11 @@ export default function Footer() {
             </li>
             <li className="flex items-center gap-3">
               <Phone size={18} className="text-brand-500" />
-              <a href={site.phoneHref} className="hover:text-brand-400">{site.phone}</a>
+              <a href={site.phoneHref} className="hover:text-brand-700">{site.phone}</a>
             </li>
             <li className="flex items-center gap-3">
               <Mail size={18} className="text-brand-500" />
-              <a href={`mailto:${site.email}`} className="break-all hover:text-brand-400">{site.email}</a>
+              <a href={`mailto:${site.email}`} className="break-all hover:text-brand-700">{site.email}</a>
             </li>
             <li className="flex items-center gap-3">
               <Clock size={18} className="text-brand-500" /> {site.hours}
@@ -43,7 +43,7 @@ export default function Footer() {
           <ul className="space-y-3">
             {navLinks.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-neutral-400 transition-colors hover:text-brand-400">{l.label}</Link>
+                <Link href={l.href} className="text-neutral-400 transition-colors hover:text-brand-700">{l.label}</Link>
               </li>
             ))}
           </ul>
@@ -53,7 +53,7 @@ export default function Footer() {
           <h2 className="mb-5 font-display text-xl">Services</h2>
           <ul className="space-y-3 text-neutral-400">
             {serviceNames.map((s) => (
-              <li key={s}><Link href="/services" className="transition-colors hover:text-brand-400">{s}</Link></li>
+              <li key={s}><Link href="/services" className="transition-colors hover:text-brand-700">{s}</Link></li>
             ))}
           </ul>
         </div>
@@ -63,7 +63,7 @@ export default function Footer() {
           <ul className="space-y-3">
             {legalLinks.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-neutral-400 transition-colors hover:text-brand-400">{l.label}</Link>
+                <Link href={l.href} className="text-neutral-400 transition-colors hover:text-brand-700">{l.label}</Link>
               </li>
             ))}
           </ul>

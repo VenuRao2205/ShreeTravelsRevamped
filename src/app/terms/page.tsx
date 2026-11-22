@@ -26,7 +26,7 @@ export default function TermsPage() {
       <LegalBlock title="Important notice"><p>{terms.notice}</p></LegalBlock>
       <LegalBlock title="Questions about these terms?">
         <p>
-          Email us at <a className="text-brand-400 underline underline-offset-4" href={`mailto:${site.email}`}>{site.email}</a>.
+          Email us at <a className="text-brand-700 underline underline-offset-4" href={`mailto:${site.email}`}>{site.email}</a>.
         </p>
       </LegalBlock>
     </LegalPage>

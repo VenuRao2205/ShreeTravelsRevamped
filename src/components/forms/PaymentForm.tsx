@@ -40,7 +40,7 @@ export default function PaymentForm() {
     }
   }
 
-  const err = (m?: string) => (m ? <p className="mt-1.5 text-sm text-red-400" role="alert">{m}</p> : null);
+  const err = (m?: string) => (m ? <p className="mt-1.5 text-sm text-red-700" role="alert">{m}</p> : null);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5 rounded-3xl border border-white/10 bg-ink-900 p-6 sm:p-9">
@@ -73,7 +73,7 @@ export default function PaymentForm() {
         <input id="remarks" className="field" {...register("remarks")} />
       </div>
 
-      {error && <p className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-300" role="alert">{error}</p>}
+      {error && <p className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-700" role="alert">{error}</p>}
 
       <button type="submit" disabled={isSubmitting} className="btn-primary w-full text-lg disabled:opacity-60">
         {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <Lock size={20} />}

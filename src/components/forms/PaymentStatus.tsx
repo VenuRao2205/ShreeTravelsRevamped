@@ -55,7 +55,7 @@ function Panel(props: { tone: "good" | "bad" | "wait"; title: string; text: stri
   const icon =
     props.tone === "wait" ? <Loader2 size={34} className="animate-spin" /> :
     props.tone === "good" ? <Check size={36} strokeWidth={3} /> : <X size={36} strokeWidth={3} />;
-  const color = props.tone === "bad" ? "bg-red-500 text-white" : "bg-brand-500 text-black";
+  const color = props.tone === "bad" ? "bg-red-600 text-[#fff]" : "bg-brand-500 text-black";
   return (
     <div className="rounded-3xl border border-white/10 bg-ink-900 p-10 text-center" role="status">
       <motion.span

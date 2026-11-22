@@ -17,7 +17,7 @@ export default function AdminApp({ enabled, signedIn }: { enabled: boolean; sign
     return (
       <Shell>
         <p className="rounded-2xl border border-white/10 bg-ink-900 p-8 text-neutral-300">
-          The admin area is switched off. Set an <code className="text-brand-400">ADMIN_PASSWORD</code> (at least 8 characters) in the site&rsquo;s environment variables and redeploy.
+          The admin area is switched off. Set an <code className="text-brand-700">ADMIN_PASSWORD</code> (at least 8 characters) in the site&rsquo;s environment variables and redeploy.
         </p>
       </Shell>
     );
@@ -52,7 +52,7 @@ function Login({ onDone }: { onDone: () => void }) {
         <label htmlFor="pw" className="field-label">Password</label>
         <input id="pw" type="password" autoComplete="current-password" className="field" value={pw} onChange={(e) => setPw(e.target.value)} />
       </div>
-      {err && <p className="text-red-400" role="alert">{err}</p>}
+      {err && <p className="text-red-700" role="alert">{err}</p>}
       <button className="btn-primary w-full" disabled={busy || !pw}>{busy && <Loader2 className="animate-spin" size={18} />} Sign in</button>
     </form>
   );
@@ -98,7 +98,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 }
 
 function Empty({ rows, error, label }: { rows: unknown[] | null; error: string; label: string }) {
-  if (error) return <p className="text-red-400" role="alert">{error}</p>;
+  if (error) return <p className="text-red-700" role="alert">{error}</p>;
   if (!rows) return <p className="text-neutral-400"><Loader2 className="mr-2 inline animate-spin" size={16} />Loading</p>;
   if (rows.length === 0) return <p className="rounded-2xl border border-dashed border-white/20 p-8 text-neutral-400">No {label} yet.</p>;
   return null;
@@ -128,7 +128,7 @@ function Leads({ onUnauthorized }: { onUnauthorized: () => void }) {
             </label>
           </div>
           <p className="mt-4 whitespace-pre-wrap text-neutral-200">{l.message}</p>
-          <p className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-brand-400">
+          <p className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-brand-700">
             <a href={`tel:${l.phone}`} className="hover:underline">{l.phone}</a>
             {l.email && <a href={`mailto:${l.email}`} className="break-all hover:underline">{l.email}</a>}
           </p>
@@ -164,7 +164,7 @@ function Reviews({ onUnauthorized }: { onUnauthorized: () => void }) {
             {r.approved
               ? <button onClick={() => approve(r._id, false)} className="btn-ghost !py-2"><X size={16} /> Unpublish</button>
               : <button onClick={() => approve(r._id, true)} className="btn-primary !py-2"><Check size={16} /> Publish</button>}
-            <button onClick={() => remove(r._id)} className="btn-ghost !py-2 hover:!border-red-500 hover:!text-red-400"><Trash2 size={16} /> Delete</button>
+            <button onClick={() => remove(r._id)} className="btn-ghost !py-2 hover:!border-red-500 hover:!text-red-600"><Trash2 size={16} /> Delete</button>
           </div>
         </article>
       ))}
@@ -189,7 +189,7 @@ function Payments({ onUnauthorized }: { onUnauthorized: () => void }) {
                   <td className="p-4 text-sm text-neutral-400">{when(p.createdAt)}</td>
                   <td className="p-4"><div className="text-white">{p.name}</div><div className="text-sm text-neutral-500">{p.email}</div></td>
                   <td className="p-4 font-display text-lg font-bold text-white">Rs {(p.amount / 100).toFixed(2)}</td>
-                  <td className="p-4"><span className={`rounded-full px-3 py-1 text-sm font-semibold ${p.state === "COMPLETED" ? "bg-brand-500 text-black" : p.state === "FAILED" ? "bg-red-500/20 text-red-300" : "bg-white/10 text-neutral-300"}`}>{p.state.toLowerCase()}</span></td>
+                  <td className="p-4"><span className={`rounded-full px-3 py-1 text-sm font-semibold ${p.state === "COMPLETED" ? "bg-brand-500 text-black" : p.state === "FAILED" ? "bg-red-500/20 text-red-700" : "bg-white/10 text-neutral-300"}`}>{p.state.toLowerCase()}</span></td>
                   <td className="break-all p-4 text-xs text-neutral-500">{p.merchantOrderId}{p.remarks ? <div className="mt-1 text-neutral-400">{p.remarks}</div> : null}</td>
                 </tr>
               ))}

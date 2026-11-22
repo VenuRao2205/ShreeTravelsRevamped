@@ -34,7 +34,7 @@ export default function Steps() {
           {steps.map((s, i) => (
             <li key={s.title} className="relative">
               <motion.span
-                className="absolute -left-12 top-0 grid h-10 w-10 place-items-center rounded-full border-2 border-brand-500 bg-black font-display text-lg font-extrabold text-brand-500 sm:-left-16 sm:h-14 sm:w-14 sm:text-2xl"
+                className="absolute -left-12 top-0 grid h-10 w-10 place-items-center rounded-full border-2 border-brand-500 bg-ink font-display text-lg font-extrabold text-brand-500 sm:-left-16 sm:h-14 sm:w-14 sm:text-2xl"
                 initial={{ scale: 0.5, opacity: 0 }}
                 whileInView={{ scale: 1, opacity: 1 }}
                 viewport={{ once: true, margin: "-30% 0px" }}

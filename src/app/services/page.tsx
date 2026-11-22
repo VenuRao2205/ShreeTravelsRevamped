@@ -21,7 +21,7 @@ export default function ServicesPage() {
         intro="We serve IT, BPO, KPO and other corporate offices across Nagpur with hourly, daily and monthly cars."
       />
 
-      <section className="bg-black">
+      <section className="bg-ink">
         <div className="container-page">
           {services.map((s) => (
             <article

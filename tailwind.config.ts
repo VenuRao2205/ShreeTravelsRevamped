@@ -20,7 +20,12 @@ const config: Config = {
           900: "#5C2300",
         },
         amber: { glow: "#FFB020" },
-        ink: { DEFAULT: "#000000", 900: "#0C0C0C", 800: "#141414", 700: "#1C1C1C", 600: "#262626" },
+        // Light grey surfaces. Higher number = more raised (page < alt section < card < input).
+        ink: { DEFAULT: "#E4E6E9", 900: "#EEF0F2", 800: "#F6F7F8", 700: "#FFFFFF", 600: "#D3D6DB" },
+        // `white` is the main text/border colour on the light theme, so text-white and border-white/10
+        // read as dark ink. Use text-[#fff] where genuinely white text is needed (on photos, red).
+        white: "#16181B",
+        neutral: { 50: "#F7F7F8", 100: "#EEEFF1", 200: "#2B2E33", 300: "#3A3E44", 400: "#4F545B", 500: "#656A72", 600: "#8A8F97", 700: "#B0B4BA", 800: "#D0D3D8", 900: "#16181B" },
       },
       fontFamily: {
         sans: ["var(--font-body)", "system-ui", "sans-serif"],

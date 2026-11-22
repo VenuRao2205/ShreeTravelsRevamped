@@ -27,8 +27,8 @@ export default function CancellationPage() {
         <p>{cancellation.refund}</p>
         <p>
           In case of any issues, write to us at{" "}
-          <a className="text-brand-400 underline underline-offset-4" href={`mailto:${site.email}`}>{site.email}</a> or call us at{" "}
-          <a className="text-brand-400 underline underline-offset-4" href={site.phoneHref}>{site.phone}</a>.
+          <a className="text-brand-700 underline underline-offset-4" href={`mailto:${site.email}`}>{site.email}</a> or call us at{" "}
+          <a className="text-brand-700 underline underline-offset-4" href={site.phoneHref}>{site.phone}</a>.
         </p>
       </LegalBlock>
       <LegalBlock title="Need to cancel a booking?">

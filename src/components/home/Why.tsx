@@ -14,7 +14,7 @@ export default function Why() {
 
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-[auto_auto_auto]">
           <Fade className="md:col-span-2 md:row-span-2">
-            <GlowArea className="flex h-full min-h-[22rem] flex-col justify-between overflow-hidden rounded-[2rem] border border-white/10 bg-black p-8 sm:p-10">
+            <GlowArea className="flex h-full min-h-[22rem] flex-col justify-between overflow-hidden rounded-[2rem] border border-white/10 bg-ink p-8 sm:p-10">
               <div className="font-display text-[clamp(6rem,14vw,11rem)] font-extrabold leading-[0.8] text-fire">
                 <CountUp value={30} suffix="+" />
               </div>
@@ -28,7 +28,7 @@ export default function Why() {
           </Fade>
 
           <Fade delay={0.08} className="md:col-span-2">
-            <GlowArea className="h-full rounded-3xl border border-white/10 bg-black p-8">
+            <GlowArea className="h-full rounded-3xl border border-white/10 bg-ink p-8">
               <h3 className="text-2xl">Professional drivers</h3>
               <p className="mt-3 text-neutral-400">
                 Experienced, courteous chauffeurs who know Nagpur&rsquo;s roads and put safety first.
@@ -47,14 +47,14 @@ export default function Why() {
           </Fade>
 
           <Fade delay={0.2} className="md:col-span-1">
-            <GlowArea className="h-full rounded-3xl border border-white/10 bg-black p-7">
+            <GlowArea className="h-full rounded-3xl border border-white/10 bg-ink p-7">
               <h3 className="text-2xl">Serviced, clean cars</h3>
               <p className="mt-3 text-neutral-400">Hatchbacks, sedans and SUVs, kept in order.</p>
             </GlowArea>
           </Fade>
 
           <Fade delay={0.1} className="md:col-span-4">
-            <GlowArea className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-black p-8 sm:flex-row sm:items-center sm:justify-between">
+            <GlowArea className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-ink p-8 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-2xl sm:text-3xl">Billed to your company, with clear rates.</h3>
               <p className="max-w-md text-neutral-400">
                 Monthly corporate billing and published pricing, so your accounts team knows what to expect.

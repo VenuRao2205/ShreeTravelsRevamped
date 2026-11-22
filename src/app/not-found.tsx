@@ -4,7 +4,7 @@ import { site } from "@/lib/site";
 
 export default function NotFound() {
   return (
-    <main className="grain relative isolate flex min-h-[70vh] items-center overflow-hidden bg-black py-24">
+    <main className="grain relative isolate flex min-h-[70vh] items-center overflow-hidden bg-ink py-24">
       <div className="container-page">
         <p className="font-display text-[clamp(7rem,26vw,20rem)] font-extrabold leading-[0.8] text-outline">404</p>
         <svg aria-hidden viewBox="0 0 600 24" className="mt-6 h-6 w-full max-w-xl">

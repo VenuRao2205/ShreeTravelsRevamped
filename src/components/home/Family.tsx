@@ -13,7 +13,7 @@ const trust = [
 export default function Family({ headingLevel = "h2" }: { headingLevel?: "h1" | "h2" }) {
   const H = headingLevel;
   return (
-    <section className="relative overflow-hidden bg-black py-24 sm:py-32">
+    <section className="relative overflow-hidden bg-ink py-24 sm:py-32">
       <div aria-hidden className="absolute -left-40 top-1/3 h-[32rem] w-[32rem] rounded-full bg-brand-500/10 blur-3xl" />
       <div className="container-page relative grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
         <Wipe>
@@ -28,7 +28,7 @@ export default function Family({ headingLevel = "h2" }: { headingLevel?: "h1" | 
                 sizes="(min-width:1024px) 40vw, 90vw"
                 className="h-auto w-full"
               />
-              <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-6 pt-16 font-display text-xl font-bold text-white">
+              <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-6 pt-16 font-display text-xl font-bold text-[#fff]">
                 Shree Travels, Nagpur
               </figcaption>
             </div>

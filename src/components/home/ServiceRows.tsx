@@ -5,7 +5,7 @@ import { services } from "@/lib/site";
 
 export default function ServiceRows() {
   return (
-    <section className="bg-black py-24 sm:py-32">
+    <section className="bg-ink py-24 sm:py-32">
       <div className="container-page">
         <div className="mb-14 max-w-3xl">
           <h2 className="text-[clamp(2.4rem,5.5vw,4.5rem)]">
@@ -38,7 +38,7 @@ export default function ServiceRows() {
                     <span className="max-w-md text-neutral-400 transition-colors duration-300 group-hover:text-black/80">
                       {s.blurb}
                     </span>
-                    <span className="hidden h-14 w-14 place-items-center rounded-full border border-white/25 text-white transition-all duration-500 group-hover:rotate-45 group-hover:border-black group-hover:bg-black group-hover:text-brand-500 sm:grid">
+                    <span className="hidden h-14 w-14 place-items-center rounded-full border border-white/25 text-white transition-all duration-500 group-hover:rotate-45 group-hover:border-black group-hover:bg-ink group-hover:text-brand-500 sm:grid">
                       <ArrowUpRight size={26} />
                     </span>
                   </span>

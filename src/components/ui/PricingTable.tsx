@@ -31,7 +31,7 @@ export default function PricingTable() {
             <tbody>
               {data.rows.map((row) => (
                 <tr key={row.label} className="group border-t border-white/10 transition-colors hover:bg-brand-500/10">
-                  <th scope="row" className="sticky left-0 z-10 bg-ink-900 p-4 align-top font-semibold transition-colors group-hover:bg-[#1f1308] sm:p-5">
+                  <th scope="row" className="sticky left-0 z-10 bg-ink-900 p-4 align-top font-semibold transition-colors group-hover:bg-brand-100 sm:p-5">
                     <span className="block text-white">{row.label}</span>
                     <span className="block text-sm font-normal text-neutral-500">{row.unit}</span>
                   </th>
@@ -42,7 +42,7 @@ export default function PricingTable() {
                         {rate == null ? (
                           <span className="text-neutral-600" aria-label="Not offered">&ndash;</span>
                         ) : (
-                          <span className="font-display text-lg font-bold text-white transition-colors group-hover:text-brand-400">
+                          <span className="font-display text-lg font-bold text-white transition-colors group-hover:text-brand-700">
                             &#8377;{inr.format(rate)}
                           </span>
                         )}
