@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
 import PaymentForm from "@/components/forms/PaymentForm";
+import PageHeader from "@/components/ui/PageHeader";
+import { Fade } from "@/components/ui/motion";
 
 export const metadata: Metadata = {
-  title: "Quick Payment",
-  description: "Pay Shree Travels securely online with PhonePe (UPI, cards, net banking).",
+  title: "Pay online",
+  description: "Pay your Shree Travels invoice securely online with PhonePe (UPI, cards and net banking).",
 };
 
 export default function PaymentPage() {
   return (
-    <main className="py-16">
-      <div className="container-page mx-auto max-w-xl">
-        <header className="mb-8 text-center">
-          <h1 className="font-display text-4xl">Quick Payment</h1>
-          <p className="mt-3 text-gray-600">Pay your Shree Travels invoice securely online.</p>
-        </header>
-        <PaymentForm />
-      </div>
+    <main>
+      <PageHeader lines={["Pay your", "invoice."]} intro="Enter the amount from your invoice and pay securely through PhonePe." />
+      <section className="py-16 sm:py-24">
+        <div className="container-page mx-auto max-w-2xl">
+          <Fade><PaymentForm /></Fade>
+        </div>
+      </section>
     </main>
   );
 }

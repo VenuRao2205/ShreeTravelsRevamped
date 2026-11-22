@@ -1,86 +1,146 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, Award, Clock, Phone, Shield, Star, Users } from "lucide-react";
-import { site } from "@/lib/site";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, Phone } from "lucide-react";
+import { MaskLine, CountUp, Fade } from "@/components/ui/motion";
+import { site, stats } from "@/lib/site";
 
-const badges = [
-  { icon: Shield, text: "30+ Years Trusted" },
-  { icon: Clock, text: "24/7 Available" },
-  { icon: Users, text: "Professional Drivers" },
-];
+const ROUTE =
+  "M 40 500 C 130 500, 150 400, 230 390 S 330 330, 370 280 S 470 230, 510 170 S 560 90, 570 50";
 
-export const stats = [
-  { number: "30+", label: "Years Experience", icon: Award },
-  { number: "10K+", label: "Happy Customers", icon: Users },
-  { number: "24/7", label: "Support Available", icon: Clock },
-  { number: "100%", label: "Satisfaction Rate", icon: Shield },
-];
+// Stops sit on the route's segment joints; `at` is roughly how far along the line they are.
+const stops = [
+  { x: 40, y: 500, name: "Gorepeth", sub: "our office", lx: 40, ly: 538, anchor: "start", at: 0 },
+  { x: 230, y: 390, name: "Sitabuldi", lx: 244, ly: 430, anchor: "start", at: 0.25 },
+  { x: 370, y: 280, name: "Zero Mile", lx: 386, ly: 320, anchor: "start", at: 0.5 },
+  { x: 510, y: 170, name: "MIHAN", lx: 490, ly: 160, anchor: "end", at: 0.78 },
+  { x: 570, y: 50, name: "Airport", lx: 546, ly: 56, anchor: "end", at: 1 },
+] as const;
+
+const DRAW = 2.6; // seconds for the road to draw
+const START = 0.5;
 
 export default function Hero() {
+  const reduce = useReducedMotion();
+
   return (
-    <section className="relative flex min-h-[85vh] items-center overflow-hidden text-white">
-      <Image
-        src="/images/hero-night.webp"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover"
+    <section
+      className="grain relative isolate overflow-hidden bg-black"
+      onPointerMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+      }}
+    >
+      {/* cursor spotlight */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10"
+        style={{ background: "radial-gradient(600px circle at var(--mx, 70%) var(--my, 30%), rgba(255,107,0,.16), transparent 65%)" }}
       />
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/95 via-gray-800/85 to-primary-900/75" />
 
-      <div className="container-page relative z-10 py-20 text-center">
-        <div className="mx-auto mb-10 inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-6 py-3 backdrop-blur-md">
-          <span className="flex gap-1" aria-hidden>
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} size={15} className="fill-current text-accent-400" />
-            ))}
-          </span>
-          <span className="font-semibold">Premium Transportation Since {site.since}</span>
-        </div>
+      {/* route map */}
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -z-0 hidden w-[52%] items-center lg:flex">
+        <svg viewBox="0 0 600 580" className="h-[86%] w-full -translate-y-4 translate-x-6 overflow-visible">
+          <defs>
+            <linearGradient id="beam" x1="0" x2="1">
+              <stop offset="0" stopColor="#FFB020" stopOpacity=".95" />
+              <stop offset="1" stopColor="#FF6B00" stopOpacity="0" />
+            </linearGradient>
+            <filter id="blur"><feGaussianBlur stdDeviation="5" /></filter>
+          </defs>
 
-        <h1 className="font-display text-5xl leading-tight sm:text-6xl lg:text-7xl">
-          Your Journey,
-          <br />
-          <span className="bg-gradient-to-r from-accent-400 via-accent-300 to-primary-400 bg-clip-text text-transparent">
-            Our Excellence
-          </span>
+          <motion.path
+            id="route"
+            d={ROUTE}
+            fill="none"
+            stroke="#161616"
+            strokeWidth={22}
+            strokeLinecap="round"
+            initial={reduce ? false : { pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: DRAW, delay: START, ease: "easeInOut" }}
+          />
+          <motion.path
+            d={ROUTE}
+            fill="none"
+            stroke="#FF6B00"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeDasharray="10 14"
+            className="animate-dashflow"
+            initial={reduce ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: START + DRAW, duration: 0.6 }}
+          />
+
+          {stops.map((s) => (
+            <motion.g
+              key={s.name}
+              initial={reduce ? false : { opacity: 0, scale: 0.4 }}
+              animate={{ opacity: 1, scale: 1 }}
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+              transition={{ delay: START + s.at * DRAW, type: "spring", stiffness: 260, damping: 16 }}
+            >
+              <circle cx={s.x} cy={s.y} r={9} fill="#FF6B00" className="animate-ping2" style={{ transformBox: "fill-box", transformOrigin: "center" }} />
+              <circle cx={s.x} cy={s.y} r={8} fill="#000" stroke="#FF6B00" strokeWidth={3} />
+              <text x={s.lx} y={s.ly} textAnchor={s.anchor} className="fill-white font-display" fontSize={19} fontWeight={800}>
+                {s.name}
+              </text>
+              {"sub" in s && (
+                <text x={s.lx} y={s.ly + 18} textAnchor={s.anchor} className="fill-neutral-500" fontSize={13}>
+                  {s.sub}
+                </text>
+              )}
+            </motion.g>
+          ))}
+
+          {!reduce && (
+            <g opacity="0">
+              <animate attributeName="opacity" from="0" to="1" begin={`${START + DRAW}s`} dur="0.3s" fill="freeze" />
+              <animateMotion dur="10s" begin={`${START + DRAW}s`} repeatCount="indefinite" rotate="auto" calcMode="linear">
+                <mpath href="#route" />
+              </animateMotion>
+              <circle r="14" fill="#FF6B00" opacity=".55" filter="url(#blur)" />
+              <path d="M10 -3 L 62 -20 L 62 20 L 10 3 Z" fill="url(#beam)" opacity=".7" />
+              <rect x="-11" y="-6" width="22" height="12" rx="4" fill="#FF6B00" />
+              <rect x="-2" y="-4.5" width="8" height="9" rx="2" fill="#000" opacity=".75" />
+            </g>
+          )}
+        </svg>
+      </div>
+
+      <div className="container-page relative z-10 flex min-h-[calc(100svh-69px)] flex-col justify-center py-16 lg:min-h-[calc(100svh-109px)]">
+        <h1 className="text-[clamp(2.9rem,7.4vw,6.4rem)] leading-[0.92]">
+          <MaskLine delay={0.1}>Chauffeur-driven</MaskLine>
+          <MaskLine delay={0.22} className="text-outline">cars for Nagpur&rsquo;s</MaskLine>
+          <MaskLine delay={0.34}>businesses.</MaskLine>
         </h1>
 
-        <p className="mx-auto mt-8 max-w-3xl text-xl font-light leading-relaxed text-gray-200">
-          Premium corporate transportation backed by three decades of service in Nagpur.
-          <span className="mt-2 block font-medium text-accent-300">
-            Professional drivers &bull; Well-kept vehicles &bull; Absolute reliability
-          </span>
-        </p>
+        <Fade delay={0.7} className="mt-8 max-w-xl">
+          <p className="text-lg text-neutral-300 sm:text-xl">
+            Airport transfers, daily staff transport and executive cars for companies across Nagpur.
+            On the road since {site.since}.
+          </p>
+        </Fade>
 
-        <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-          <Link href="/contact" className="btn-primary px-8 py-4 text-lg">
-            Book Your Ride <ArrowRight size={22} />
+        <Fade delay={0.85} className="mt-10 flex flex-col gap-4 sm:flex-row">
+          <Link href="/contact" className="btn-primary text-lg">
+            Get a quote <ArrowRight size={20} />
           </Link>
-          <a href={site.phoneHref} className="btn-accent px-8 py-4 text-lg">
-            <Phone size={20} /> Call Now
+          <a href={site.phoneHref} className="btn-ghost text-lg">
+            <Phone size={19} /> Call {site.phoneShort}
           </a>
-        </div>
+        </Fade>
 
-        <ul className="mt-14 flex flex-wrap justify-center gap-x-10 gap-y-4">
-          {badges.map((b) => (
-            <li key={b.text} className="flex items-center gap-3 text-lg font-semibold text-gray-100">
-              <span className="rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur-md">
-                <b.icon size={24} className="text-accent-400" />
-              </span>
-              {b.text}
-            </li>
-          ))}
-        </ul>
-
-        <dl className="mx-auto mt-14 grid max-w-5xl grid-cols-2 gap-4 lg:grid-cols-4">
+        <dl className="mt-16 grid max-w-[34rem] grid-cols-3 gap-4 border-t border-white/15 pt-8">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-              <s.icon size={28} className="mx-auto mb-3 text-accent-400" />
-              <dt className="sr-only">{s.label}</dt>
-              <dd className="text-4xl font-bold text-accent-300">{s.number}</dd>
-              <p className="mt-1 text-gray-300">{s.label}</p>
+            <div key={s.label}>
+              <dd className="font-display text-3xl font-extrabold text-fire sm:text-[2.6rem]">
+                <CountUp value={s.value} suffix={s.suffix} />
+              </dd>
+              <dt className="mt-1 text-sm text-neutral-400">{s.label}</dt>
             </div>
           ))}
         </dl>

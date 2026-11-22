@@ -1,51 +1,71 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { MotionConfig } from "framer-motion";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import FloatingCall from "@/components/ui/FloatingCall";
+import { ScrollProgress } from "@/components/ui/motion";
+import { site } from "@/lib/site";
 
-const inter = localFont({
-  src: "./fonts/inter-latin-wght-normal.woff2",
-  variable: "--font-inter",
-  weight: "100 900",
+const display = localFont({
+  src: "./fonts/bricolage-grotesque-latin-wght-normal.woff2",
+  variable: "--font-display",
+  weight: "200 800",
   display: "swap",
 });
-const playfair = localFont({
-  src: "./fonts/playfair-display-latin-wght-normal.woff2",
-  variable: "--font-playfair",
-  weight: "400 900",
+const body = localFont({
+  src: "./fonts/instrument-sans-latin-wght-normal.woff2",
+  variable: "--font-body",
+  weight: "400 700",
   display: "swap",
 });
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://shreetravelsnagpur.com";
+export const viewport: Viewport = { themeColor: "#000000" };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(site.url),
   title: {
     default: "Shree Travels Nagpur | Corporate Car Rental & Employee Transport",
     template: "%s | Shree Travels Nagpur",
   },
   description:
-    "Nagpur's trusted corporate car rental service for 30+ years. Airport transfers, employee transportation, executive travel and event transport with professional chauffeurs.",
-  openGraph: {
-    type: "website",
-    siteName: "Shree Travels Nagpur",
-    locale: "en_IN",
-  },
+    "Chauffeur-driven corporate car rental in Nagpur since 1994. Airport transfers, employee transportation, executive travel and event cars.",
+  openGraph: { type: "website", siteName: "Shree Travels", locale: "en_IN" },
+  twitter: { card: "summary_large_image" },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "AutoRental",
+  name: site.name,
+  url: site.url,
+  telephone: site.phone,
+  email: site.email,
+  foundingDate: String(site.since),
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Plot No. 1066, Near Law College Square, Gorepeth",
+    addressLocality: "Nagpur",
+    addressRegion: "Maharashtra",
+    postalCode: "440010",
+    addressCountry: "IN",
+  },
+  areaServed: "Nagpur",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${playfair.variable} font-sans antialiased text-primary-900 bg-white`}
-      >
-        <Navbar />
-        {children}
-        <Footer />
+    <html lang="en" className={`${display.variable} ${body.variable}`}>
+      <body className="font-sans">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <MotionConfig reducedMotion="user">
+          <ScrollProgress />
+          <Navbar />
+          {children}
+          <Footer />
+          <FloatingCall />
+        </MotionConfig>
       </body>
     </html>
   );

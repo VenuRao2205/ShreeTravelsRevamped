@@ -1,16 +1,21 @@
 import Hero from "@/components/home/Hero";
-import Features from "@/components/home/Features";
-import About from "@/components/home/About";
-import ServicesPreview from "@/components/home/ServicesPreview";
+import Marquee from "@/components/ui/Marquee";
+import ServiceRows from "@/components/home/ServiceRows";
+import Why from "@/components/home/Why";
+import Fleet from "@/components/home/Fleet";
+import Steps from "@/components/home/Steps";
 import CTA from "@/components/home/CTA";
+import { serviceNames } from "@/lib/site";
 
 export default function Home() {
   return (
     <main>
       <Hero />
-      <Features />
-      <About />
-      <ServicesPreview />
+      <Marquee items={serviceNames} />
+      <ServiceRows />
+      <Why />
+      <Fleet />
+      <Steps />
       <CTA />
     </main>
   );
