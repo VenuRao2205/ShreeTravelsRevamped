@@ -1,6 +1,6 @@
 import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, rgb } from "pdf-lib";
 import {
-  COMPANY_DEFAULTS, DEFAULT_NOTES, KIND_LABEL, fmt2, fmtBillDate, fmtDateTime, inWords, lineAmount, totalsOf,
+  COMPANY_DEFAULTS, DEFAULT_NOTES, KIND_LABEL, RCM_STATEMENT, fmt2, fmtBillDate, fmtDateTime, inWords, lineAmount, totalsOf,
   type BillInput, type Company, type Kind,
 } from "@/lib/billing";
 import { MARK_PNG, STAMP_PNG, WORDMARK_PNG } from "@/lib/bill-assets";
@@ -229,8 +229,23 @@ export async function renderBillPdf(bill: BillInput): Promise<Uint8Array> {
   };
   if (t.toll > 0) charge("Toll_Charges", null, t.toll);
   if (t.parking > 0) charge("Parking_Charges", null, t.parking);
-  if (bill.gstMode === "cgst_sgst") { charge("CGST", fmt2(bill.gstRate / 2), t.cgst); charge("SGST", fmt2(bill.gstRate / 2), t.sgst); }
-  if (bill.gstMode === "igst") charge("IGST", fmt2(bill.gstRate), t.igst);
+  if (bill.gstMode === "cgst_sgst" && !bill.rcm) { charge("CGST", fmt2(bill.gstRate / 2), t.cgst); charge("SGST", fmt2(bill.gstRate / 2), t.sgst); }
+  if (bill.gstMode === "igst" && !bill.rcm) charge("IGST", fmt2(bill.gstRate), t.igst);
+  if (bill.rcm && t.rcmTax > 0) {
+    // Reverse charge: shown for the customer, but kept out of the total
+    ry -= 4;
+    wrap(RCM_STATEMENT, f.reg, 6.8, 205).forEach((l) => { page.drawText(l, { x: rx, y: ry, size: 6.8, font: f.reg, color: GREY }); ry -= 8.5; });
+    ry -= 3;
+    const gstLine = (label: string, rate: string, amt: number) => {
+      page.drawText(label, { x: rx, y: ry, size: 7.8, font: f.mono, color: GREY });
+      page.drawText(`@  ${rate}`, { x: rx + 100, y: ry, size: 7.8, font: f.mono, color: GREY });
+      const a = fmt2(amt);
+      page.drawText(a, { x: rr - f.mono.widthOfTextAtSize(a, 8.5), y: ry, size: 8.5, font: f.mono, color: GREY });
+      ry -= 13;
+    };
+    if (bill.gstMode === "cgst_sgst") { gstLine("CGST (RCM)", fmt2(bill.gstRate / 2), t.rcmCgst); gstLine("SGST (RCM)", fmt2(bill.gstRate / 2), t.rcmSgst); }
+    if (bill.gstMode === "igst") gstLine("IGST (RCM)", fmt2(bill.gstRate), t.rcmIgst);
+  }
 
   // final total
   let fy = Math.min(ly, ry) - 20;

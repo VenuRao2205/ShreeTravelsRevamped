@@ -7,7 +7,8 @@ import { CountUp } from "@/components/ui/motion";
 import { Stars } from "@/components/forms/Reviews";
 import { waLink } from "@/lib/whatsapp";
 import PaymentLinks from "@/components/admin/PaymentLinks";
-import Bills, { type BillRow } from "@/components/admin/Bills";
+import Billing from "@/components/admin/Billing";
+import type { BillRow } from "@/components/admin/Bills";
 import { Chips, Pager, RangeBar, SearchBox, initialRange, rangeLabel, rangeParams, useDebounced, usePaged, type Range } from "@/components/admin/Filters";
 
 type Lead = { _id: string; name: string; email?: string; phone: string; service?: string; message: string; status: string; createdAt: string };
@@ -110,7 +111,7 @@ const tabs: { id: Tab; label: string; icon: typeof Inbox }[] = [
   { id: "leads", label: "Enquiries", icon: Inbox },
   { id: "reviews", label: "Reviews", icon: MessageSquareQuote },
   { id: "payments", label: "Payments", icon: CircleDollarSign },
-  { id: "bills", label: "Bills", icon: FileText },
+  { id: "bills", label: "Billing", icon: FileText },
   { id: "links", label: "Payment links", icon: Link2 },
 ];
 
@@ -147,7 +148,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           {tab === "leads" && <Leads {...props} />}
           {tab === "reviews" && <Reviews {...props} />}
           {tab === "payments" && <Payments {...props} />}
-          {tab === "bills" && <Bills range={range} onUnauthorized={onLogout} onMakeLink={(b) => { setDraft(b); setTab("links"); }} />}
+          {tab === "bills" && <Billing range={range} onUnauthorized={onLogout} onMakeLink={(b) => { setDraft(b); setTab("links"); }} />}
           {tab === "links" && <PaymentLinks range={range} onUnauthorized={onLogout} draft={draft} onDraftUsed={() => setDraft(null)} />}
         </motion.div>
       </AnimatePresence>

@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Download, Eye, FileText, Link2, Loader2, Mail, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { Pager, SearchBox, rangeLabel, rangeParams, useDebounced, usePaged, type Range } from "@/components/admin/Filters";
 import {
-  COMPANY_DEFAULTS, DEFAULT_NOTES, KINDS, KIND_LABEL, inWords, inr, lineAmount, totalsOf,
+  COMPANY_DEFAULTS, DEFAULT_NOTES, KINDS, KIND_LABEL, inWords, inr, lineAmount, looksLikeCompany, totalsOf,
   type BillInput, type Company, type Item, type Kind,
 } from "@/lib/billing";
 
@@ -17,7 +17,7 @@ export type BillRow = {
 type ItemF = { start: string; end: string; passenger: string; from: string; taxiNo: string; carType: string; dutySlip: string; kind: Kind; rateLabel: string; kms: string; hours: string; rate: string; amount: string; toll: string; parking: string };
 type BillF = {
   billNo: string; billDate: string; customerName: string; customerCity: string; bookedBy: string; customerGstin: string; customerEmail: string; customerPhone: string;
-  items: ItemF[]; gstMode: "cgst_sgst" | "igst" | "none"; gstRate: string; notes: string; showStamp: boolean; company: Company;
+  items: ItemF[]; gstMode: "cgst_sgst" | "igst" | "none"; gstRate: string; rcm: boolean; notes: string; showStamp: boolean; company: Company;
 };
 
 const today = () => new Date().toLocaleDateString("en-CA");
@@ -31,8 +31,10 @@ const blankItem = (from?: Partial<ItemF>): ItemF => ({
 });
 const blankBill = (billNo: string): BillF => ({
   billNo, billDate: today(), customerName: "", customerCity: "", bookedBy: "", customerGstin: "", customerEmail: "", customerPhone: "",
-  items: [blankItem()], gstMode: "cgst_sgst", gstRate: "5", notes: DEFAULT_NOTES, showStamp: true, company: { ...COMPANY_DEFAULTS },
+  items: [blankItem()], gstMode: "cgst_sgst", gstRate: "5", rcm: false, notes: DEFAULT_NOTES, showStamp: true, company: { ...COMPANY_DEFAULTS },
 });
+
+export type Customer = { customerName: string; customerCity?: string; bookedBy?: string; customerGstin?: string; customerEmail?: string; customerPhone?: string; gstMode?: BillF["gstMode"]; gstRate?: number; rcm?: boolean };
 
 function toInput(f: BillF): BillInput {
   return {
@@ -42,7 +44,7 @@ function toInput(f: BillF): BillInput {
       start: i.start, end: i.end, passenger: i.passenger.trim(), from: i.from.trim(), taxiNo: i.taxiNo.trim(), carType: i.carType.trim(), dutySlip: i.dutySlip.trim(),
       kind: i.kind, rateLabel: i.rateLabel.trim(), kms: num(i.kms), hours: num(i.hours), rate: num(i.rate), amount: num(i.amount), toll: num(i.toll), parking: num(i.parking),
     })),
-    gstMode: f.gstMode, gstRate: num(f.gstRate), notes: f.notes, showStamp: f.showStamp, company: f.company,
+    gstMode: f.gstMode, gstRate: num(f.gstRate), rcm: f.rcm && f.gstMode !== "none", notes: f.notes, showStamp: f.showStamp, company: f.company,
   };
 }
 
@@ -59,7 +61,7 @@ function fromDoc(d: Record<string, unknown>, billNo?: string): BillF {
           kms: str(i.kms), hours: str(i.hours), rate: str(i.rate), amount: str(i.amount), toll: str(i.toll), parking: str(i.parking),
         }))
       : [blankItem()],
-    gstMode: (d.gstMode as BillF["gstMode"]) ?? "cgst_sgst", gstRate: String(d.gstRate ?? 5), notes: String(d.notes ?? DEFAULT_NOTES), showStamp: d.showStamp !== false,
+    gstMode: (d.gstMode as BillF["gstMode"]) ?? "cgst_sgst", gstRate: String(d.gstRate ?? 5), rcm: d.rcm === true, notes: String(d.notes ?? DEFAULT_NOTES), showStamp: d.showStamp !== false,
     company: { ...COMPANY_DEFAULTS, ...((d.company as Partial<Company>) ?? {}) },
   };
 }
@@ -70,12 +72,13 @@ function openPdfTab(load: () => Promise<string>, fail: (m: string) => void) {
   load().then((url) => { if (w) w.location.href = url; else window.location.href = url; }).catch((e) => { w?.close(); fail(e instanceof Error ? e.message : "Could not make the PDF."); });
 }
 
-export default function Bills({ range, onUnauthorized, onMakeLink }: { range: Range; onUnauthorized: () => void; onMakeLink: (b: BillRow) => void }) {
+export default function BillsList({ range, onUnauthorized, onMakeLink }: { range: Range; onUnauthorized: () => void; onMakeLink: (b: BillRow) => void }) {
   const [form, setForm] = useState<{ id?: string; initial: BillF } | null>(null);
   const [q, setQ] = useState("");
   const dq = useDebounced(q.trim());
   const list = usePaged<{ rows: BillRow[]; total: number }>("/api/admin/bills", { ...rangeParams(range), ...(dq && { q: dq }) }, onUnauthorized);
   const [msg, setMsg] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   async function startNew() {
     setMsg("");
@@ -83,6 +86,7 @@ export default function Bills({ range, onUnauthorized, onMakeLink }: { range: Ra
       const res = await fetch("/api/admin/bills?meta=1", { cache: "no-store" });
       if (res.status === 401) return onUnauthorized();
       const data = await res.json();
+      setCustomers(data.customers ?? []);
       setForm({ initial: blankBill(data.next ?? "00001") });
     } catch { setMsg("Could not start a new bill. Please try again."); }
   }
@@ -93,8 +97,9 @@ export default function Bills({ range, onUnauthorized, onMakeLink }: { range: Ra
       if (res.status === 401) return onUnauthorized();
       const doc = await res.json();
       if (!res.ok) throw new Error(doc.error);
-      if (mode === "edit") return setForm({ id, initial: fromDoc(doc) });
       const meta = await (await fetch("/api/admin/bills?meta=1", { cache: "no-store" })).json();
+      setCustomers(meta.customers ?? []);
+      if (mode === "edit") return setForm({ id, initial: fromDoc(doc) });
       setForm({ initial: fromDoc(doc, meta.next ?? "") });
     } catch (e) { setMsg(e instanceof Error && e.message ? e.message : "Could not open that bill."); }
   }
@@ -108,7 +113,7 @@ export default function Bills({ range, onUnauthorized, onMakeLink }: { range: Ra
       {msg && <p className="text-danger" role="alert">{msg}</p>}
 
       <AnimatePresence>
-        {form && <BillForm key={form.id ?? "new"} id={form.id} initial={form.initial} onCancel={() => setForm(null)} onSaved={() => { setForm(null); list.reload(); }} onUnauthorized={onUnauthorized} />}
+        {form && <BillForm key={form.id ?? "new"} id={form.id} customers={customers} initial={form.initial} onCancel={() => setForm(null)} onSaved={() => { setForm(null); list.reload(); }} onUnauthorized={onUnauthorized} />}
       </AnimatePresence>
 
       {!form && (
@@ -188,7 +193,7 @@ function BillCard({ b, onEdit, onCopy, onLink, reload, setMsg }: { b: BillRow; o
 
 /* ------------------------------------------------------------------ form */
 
-function BillForm({ id, initial, onCancel, onSaved, onUnauthorized }: { id?: string; initial: BillF; onCancel: () => void; onSaved: () => void; onUnauthorized: () => void }) {
+function BillForm({ id, initial, customers, onCancel, onSaved, onUnauthorized }: { id?: string; initial: BillF; customers: Customer[]; onCancel: () => void; onSaved: () => void; onUnauthorized: () => void }) {
   const [f, setF] = useState<BillF>(initial);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState<"" | "save" | "open" | "preview">("");
@@ -203,6 +208,18 @@ function BillForm({ id, initial, onCancel, onSaved, onUnauthorized }: { id?: str
     ? `This customer's GSTIN starts with ${gstState}, a different state from yours (${ownState}). IGST is usually charged for other states.`
     : gstState && gstState === ownState && f.gstMode === "igst" ? `This customer's GSTIN is from your own state (${ownState}). CGST + SGST is usually charged within the state.` : "";
 
+  /** Typing or picking a customer we have billed before fills in their details (only the empty boxes). */
+  function pickCustomer(name: string) {
+    const c = customers.find((x) => x.customerName.toLowerCase() === name.trim().toLowerCase());
+    setF((x) => ({
+      ...x, customerName: c ? c.customerName : name,
+      ...(c && {
+        customerCity: x.customerCity || c.customerCity || "", bookedBy: x.bookedBy || c.bookedBy || "", customerGstin: x.customerGstin || c.customerGstin || "",
+        customerEmail: x.customerEmail || c.customerEmail || "", customerPhone: x.customerPhone || c.customerPhone || "",
+        ...(x.customerName.trim().toLowerCase() !== c.customerName.toLowerCase() && c.gstMode ? { gstMode: c.gstMode, gstRate: String(c.gstRate ?? 5), rcm: !!c.rcm } : {}),
+      }),
+    }));
+  }
   function addTrip(copy?: ItemF) {
     setF((x) => {
       const last = x.items[x.items.length - 1];
@@ -271,11 +288,21 @@ function BillForm({ id, initial, onCancel, onSaved, onUnauthorized }: { id?: str
         </div>
         {f.gstMode === "cgst_sgst" && <p className="mt-2 text-sm text-neutral-500">{num(f.gstRate)}% is split as {num(f.gstRate) / 2}% CGST + {num(f.gstRate) / 2}% SGST. Tax is worked out on the trip amounts. Toll and parking are added after tax.</p>}
         {hint && <p className="mt-2 text-sm text-accent" role="status">{hint}</p>}
+        {f.gstMode !== "none" && (
+          <div className="mt-4 rounded-2xl border border-white/10 p-4">
+            <label className="flex cursor-pointer items-start gap-3 text-neutral-200">
+              <input type="checkbox" className="mt-1 h-5 w-5 accent-[#FF6B00]" checked={f.rcm} onChange={(e) => set("rcm", e.target.checked)} />
+              <span><span className="font-semibold">Reverse charge (RCM): the customer pays the GST</span><br />
+                <span className="text-sm text-neutral-400">The bill shows the tax but does not add it to the total. Used when a proprietor or partnership rents a passenger car to a company at 5% without input credit. Your CA can confirm whether it applies to this customer.</span></span>
+            </label>
+            {!f.rcm && looksLikeCompany(f.customerName) && <p className="mt-3 text-sm text-accent" role="status">This customer looks like a company. If you charge 5% without input credit, GST may be payable by the customer under reverse charge. Check with your CA before adding GST to the bill.</p>}
+          </div>
+        )}
       </Section>
 
       <Section title="Customer">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <L label="Customer name"><input className="field" value={f.customerName} onChange={(e) => set("customerName", e.target.value)} required minLength={2} /></L>
+          <L label="Customer name"><input className="field" list="bill-customers" autoComplete="off" value={f.customerName} onChange={(e) => pickCustomer(e.target.value)} required minLength={2} /><datalist id="bill-customers">{customers.map((c) => <option key={c.customerName} value={c.customerName} />)}</datalist></L>
           <L label="City"><input className="field" value={f.customerCity} onChange={(e) => set("customerCity", e.target.value)} placeholder="e.g. MUMBAI" /></L>
           <L label="Booked by"><input className="field" value={f.bookedBy} onChange={(e) => set("bookedBy", e.target.value)} placeholder="e.g. MR.KISHORE" /></L>
           <L label="Customer GST number"><input className="field font-mono" value={f.customerGstin} onChange={(e) => set("customerGstin", e.target.value)} /></L>
@@ -349,9 +376,10 @@ function BillForm({ id, initial, onCancel, onSaved, onUnauthorized }: { id?: str
         <Line label="Trips total" value={t.subtotal} />
         {t.toll > 0 && <Line label="Toll charges" value={t.toll} />}
         {t.parking > 0 && <Line label="Parking charges" value={t.parking} />}
-        {f.gstMode === "cgst_sgst" && <><Line label={`CGST @ ${num(f.gstRate) / 2}%`} value={t.cgst} /><Line label={`SGST @ ${num(f.gstRate) / 2}%`} value={t.sgst} /></>}
-        {f.gstMode === "igst" && <Line label={`IGST @ ${num(f.gstRate)}%`} value={t.igst} />}
+        {!input.rcm && f.gstMode === "cgst_sgst" && <><Line label={`CGST @ ${num(f.gstRate) / 2}%`} value={t.cgst} /><Line label={`SGST @ ${num(f.gstRate) / 2}%`} value={t.sgst} /></>}
+        {!input.rcm && f.gstMode === "igst" && <Line label={`IGST @ ${num(f.gstRate)}%`} value={t.igst} />}
         <div className="flex items-baseline justify-between border-t border-white/10 pt-3"><span className="text-lg text-white">Final total</span><span className="font-display text-3xl font-bold text-white">{inr(t.total)}</span></div>
+        {input.rcm && t.rcmTax > 0 && <p className="text-sm text-accent">GST of {inr(t.rcmTax)} is payable by the customer under reverse charge. It is shown on the bill but not added to the total.</p>}
         <p className="text-sm text-neutral-400">Rs. {inWords(t.total)} only. Total KMs: {t.kms.toFixed(2)}</p>
       </div>
 

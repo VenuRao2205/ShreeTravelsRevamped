@@ -17,6 +17,8 @@ export const COMPANY_DEFAULTS = {
 };
 export type Company = typeof COMPANY_DEFAULTS;
 
+export const RCM_STATEMENT = "GST on this supply is payable by the recipient under reverse charge (Notification No. 13/2017-Central Tax (Rate)). Tax shown below is not added to the total.";
+
 export const DEFAULT_NOTES = [
   "1) Enclosed total duty slip",
   "2) We are not responsible for the loss of signed duty slip, after you receive the bill. Please check.",
@@ -66,6 +68,7 @@ export const billSchema = z.object({
   items: z.array(itemSchema).min(1, "Add at least one trip").max(60),
   gstMode: z.enum(["cgst_sgst", "igst", "none"]).default("cgst_sgst"),
   gstRate: z.number().min(0).max(40).default(5), // total %, split in half for CGST + SGST
+  rcm: z.boolean().default(false), // reverse charge: the customer pays the GST, so it is shown but not added to the total
   notes: z.string().max(600).default(DEFAULT_NOTES),
   showStamp: z.boolean().default(true),
   company: z
@@ -90,10 +93,15 @@ export function lineAmount(i: Pick<Item, "kind" | "kms" | "hours" | "rate" | "am
   }
 }
 
-export type Totals = { subtotal: number; kms: number; toll: number; parking: number; cgst: number; sgst: number; igst: number; total: number };
+export type Totals = {
+  subtotal: number; kms: number; toll: number; parking: number;
+  cgst: number; sgst: number; igst: number; // GST added to the bill
+  rcmCgst: number; rcmSgst: number; rcmIgst: number; rcmTax: number; // GST the customer pays under reverse charge (not in the total)
+  total: number;
+};
 
 /** GST is charged on the trip amounts; tolls and parking are added after tax (as on the existing bills). Tax rounds to the nearest rupee. */
-export function totalsOf(b: Pick<BillInput, "items" | "gstMode" | "gstRate">): Totals {
+export function totalsOf(b: Pick<BillInput, "items" | "gstMode" | "gstRate"> & { rcm?: boolean }): Totals {
   const subtotal = r2(b.items.reduce((a, i) => a + lineAmount(i), 0));
   const kms = r2(b.items.reduce((a, i) => a + i.kms, 0));
   const toll = r2(b.items.reduce((a, i) => a + i.toll, 0));
@@ -101,8 +109,14 @@ export function totalsOf(b: Pick<BillInput, "items" | "gstMode" | "gstRate">): T
   let cgst = 0, sgst = 0, igst = 0;
   if (b.gstMode === "cgst_sgst") { cgst = sgst = Math.round((subtotal * b.gstRate) / 200); }
   if (b.gstMode === "igst") igst = Math.round((subtotal * b.gstRate) / 100);
-  return { subtotal, kms, toll, parking, cgst, sgst, igst, total: r2(subtotal + toll + parking + cgst + sgst + igst) };
+  const rcm = !!b.rcm && b.gstMode !== "none";
+  const out = rcm ? { cgst: 0, sgst: 0, igst: 0, rcmCgst: cgst, rcmSgst: sgst, rcmIgst: igst } : { cgst, sgst, igst, rcmCgst: 0, rcmSgst: 0, rcmIgst: 0 };
+  const rcmTax = out.rcmCgst + out.rcmSgst + out.rcmIgst;
+  return { subtotal, kms, toll, parking, ...out, rcmTax, total: r2(subtotal + toll + parking + out.cgst + out.sgst + out.igst) };
 }
+
+/** True for names that read like a company, LLP or similar (a "body corporate" under GST). Only a prompt to check, never a decision. */
+export const looksLikeCompany = (name: string) => /\b(pvt|private|ltd|limited|llp|inc|corporation|corp)\b/i.test(name ?? "");
 
 const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
 const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];

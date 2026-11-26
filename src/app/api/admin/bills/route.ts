@@ -16,11 +16,18 @@ export async function GET(req: Request) {
 
   // Small helpers for the form: the next invoice number, and recent bills to attach to a payment link.
   if (url.searchParams.get("meta")) {
-    const [last, recent] = await Promise.all([
+    const [last, recent, customers] = await Promise.all([
       BillModel.findOne().sort({ createdAt: -1 }).select("billNo").lean(),
       BillModel.find().sort({ createdAt: -1 }).limit(60).select(LIST_FIELDS).lean(),
+      // the latest bill of each customer, so the form can fill in their details
+      BillModel.aggregate([
+        { $sort: { createdAt: -1 } },
+        { $group: { _id: "$customerName", customerCity: { $first: "$customerCity" }, bookedBy: { $first: "$bookedBy" }, customerGstin: { $first: "$customerGstin" }, customerEmail: { $first: "$customerEmail" }, customerPhone: { $first: "$customerPhone" }, gstMode: { $first: "$gstMode" }, gstRate: { $first: "$gstRate" }, rcm: { $first: "$rcm" } } },
+        { $sort: { _id: 1 } },
+        { $limit: 300 },
+      ]),
     ]);
-    return NextResponse.json({ next: nextBillNo(last?.billNo), recent });
+    return NextResponse.json({ next: nextBillNo(last?.billNo), recent, customers: customers.map(({ _id, ...c }) => ({ customerName: _id, ...c })) });
   }
 
   const q = parseList(req);
