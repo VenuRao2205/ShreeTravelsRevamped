@@ -9,6 +9,11 @@ export const site = {
   hours: "Mon-Sat: 10:00 AM - 10:00 PM",
   since: 1994,
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.shreetravelsnagpur.com",
+  // Google Business Profile links. Set the env vars in Netlify to use your exact listing.
+  googleMaps:
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_URL ??
+    "https://www.google.com/maps/search/?api=1&query=Shree+Travels+Gorepeth+Nagpur",
+  googleReview: process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL ?? "",
 };
 
 export const navLinks = [
