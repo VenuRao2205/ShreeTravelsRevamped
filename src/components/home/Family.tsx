@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Fade, MaskLine, Wipe } from "@/components/ui/motion";
+import { Fade, MaskLine } from "@/components/ui/motion";
 import { site } from "@/lib/site";
 
 const trust = [
