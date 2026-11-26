@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Loader2, LockKeyhole, LogOut, QrCode } from "lucide-react";
-import { QrPanel, type QrState } from "@/components/forms/PaymentForm";
+import { Check, Loader2, LockKeyhole, LogOut } from "lucide-react";
 
 type Invoice = { key: string; number: string; date: string; amount: number; status: "UNPAID" | "PAID" };
 type Me = { name: string; expiresAt: string; invoices: Invoice[] };
@@ -31,7 +30,7 @@ export default function InvoicePortal() {
 
   if (checking) return <p className="rounded-3xl border border-white/10 bg-ink-900 p-9 text-center text-neutral-400"><Loader2 className="mr-2 inline animate-spin" size={16} />Loading</p>;
   if (!me) return <Login onDone={load} />;
-  return <Invoices me={me} reload={load} onSignOut={() => setMe(null)} />;
+  return <Invoices me={me} onSignOut={() => setMe(null)} />;
 }
 
 function Login({ onDone }: { onDone: () => void }) {
@@ -73,29 +72,23 @@ function Login({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Invoices({ me, reload, onSignOut }: { me: Me; reload: () => void; onSignOut: () => void }) {
+function Invoices({ me, onSignOut }: { me: Me; onSignOut: () => void }) {
   const unpaid = useMemo(() => me.invoices.filter((i) => i.status === "UNPAID"), [me]);
   const [picked, setPicked] = useState<Set<string>>(() => new Set(unpaid.map((i) => i.key)));
-  const [busy, setBusy] = useState<"" | "page" | "qr">("");
+  const [busy, setBusy] = useState<"" | "page">("");
   const [error, setError] = useState("");
-  const [qr, setQr] = useState<QrState | null>(null);
 
   const total = unpaid.filter((i) => picked.has(i.key)).reduce((a, i) => a + i.amount, 0);
   const toggle = (k: string) => setPicked((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const allOn = unpaid.length > 0 && unpaid.every((i) => picked.has(i.key));
 
-  async function pay(mode: "page" | "qr") {
-    setBusy(mode); setError("");
+  async function pay() {
+    setBusy("page"); setError("");
     try {
-      const res = await fetch("/api/portal/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ keys: [...picked], mode }) });
+      const res = await fetch("/api/portal/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ keys: [...picked], mode: "page" }) });
       const data = await res.json();
       if (res.status === 401) return onSignOut();
       if (!res.ok) throw new Error(data.error ?? "We could not start the payment.");
-      if (mode === "qr") {
-        if (!data.qrData) throw new Error("We could not create the QR code.");
-        const nums = unpaid.filter((i) => picked.has(i.key)).map((i) => i.number).join(", ");
-        return setQr({ orderId: data.orderId, qrData: data.qrData, amount: total, invoice: nums });
-      }
       window.location.assign(data.redirectUrl);
       return; // leave the button busy while the browser moves to PhonePe
     } catch (e) {
@@ -105,8 +98,6 @@ function Invoices({ me, reload, onSignOut }: { me: Me; reload: () => void; onSig
   }
 
   async function signOut() { await fetch("/api/portal/logout", { method: "POST" }); onSignOut(); }
-
-  if (qr) return <QrPanel qr={qr} onBack={() => setQr(null)} onDone={() => { setQr(null); reload(); }} />;
 
   return (
     <div className="rounded-3xl border border-white/10 bg-ink-900 p-6 sm:p-9">
@@ -158,11 +149,8 @@ function Invoices({ me, reload, onSignOut }: { me: Me; reload: () => void; onSig
           </div>
           {error && <p className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-danger" role="alert">{error}</p>}
           <div className="mt-5 space-y-3">
-            <button onClick={() => pay("page")} disabled={!total || !!busy} className="btn-primary w-full text-lg disabled:opacity-60">
+            <button onClick={pay} disabled={!total || !!busy} className="btn-primary w-full text-lg disabled:opacity-60">
               {busy === "page" ? <Loader2 className="animate-spin" size={20} /> : <LockKeyhole size={20} />} {busy === "page" ? "Opening PhonePe" : `Pay ${inr(total)} with PhonePe`}
-            </button>
-            <button onClick={() => pay("qr")} disabled={!total || !!busy} className="btn-ghost w-full text-lg disabled:opacity-60">
-              {busy === "qr" ? <Loader2 className="animate-spin" size={20} /> : <QrCode size={20} />} Pay by scanning a QR code
             </button>
           </div>
           <p className="mt-4 text-center text-sm text-neutral-500">We never see your card or UPI details.</p>
