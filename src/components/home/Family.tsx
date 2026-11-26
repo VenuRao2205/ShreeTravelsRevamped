@@ -14,8 +14,8 @@ const trust = [
     text: "Call us and you speak to the people who run the business. Every trip is our responsibility.",
   },
   {
-    title: "Your best experience",
-    text: "All we want is for you to enjoy the ride, from the first call to the last stop.",
+    title: "Your comfort comes first",
+    text: "All we want is for you to have the best experience, from the first call to the last stop.",
   },
 ];
 
