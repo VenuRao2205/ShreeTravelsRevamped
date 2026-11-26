@@ -10,12 +10,12 @@ const trust = [
     text: "Over thirty years of corporate travel in Nagpur.",
   },
   {
-    title: "Owners you can call",
-    text: "The people who run Shree Travels answer for every trip.",
+    title: "Owners on the line",
+    text: "Call us and you speak to the people who run the business. Every trip is our responsibility.",
   },
   {
-    title: "Clear dealings",
-    text: "Published rates, proper invoices and written policies.",
+    title: "Honest pricing",
+    text: "Rates are published up front, every payment gets a proper invoice, and our policies are in writing.",
   },
 ];
 
