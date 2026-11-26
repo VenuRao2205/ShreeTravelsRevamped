@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-auth";
 import { connectDB } from "@/lib/db";
-import { PaymentRequestModel } from "@/models";
+import { BillModel, PaymentRequestModel } from "@/models";
 import { dateFilter, pageOf, parseList, rx } from "@/lib/admin-query";
 import { hashPassword, newLoginId, newPassword, normalise, pretty } from "@/lib/portal";
 
@@ -68,6 +68,7 @@ const create = z.object({
         number: z.string().trim().min(1).max(60),
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         amountRupees: z.number().min(1).max(500000),
+        billId: z.string().optional(),
       }),
     )
     .min(1)
@@ -87,6 +88,9 @@ export async function POST(req: Request) {
   if (custom.error) return NextResponse.json({ error: custom.error }, { status: 400 });
 
   await connectDB();
+  for (const i of d.invoices) {
+    if (i.billId && (!mongoose.isValidObjectId(i.billId) || !(await BillModel.exists({ _id: i.billId })))) return NextResponse.json({ error: `The bill attached to invoice ${i.number} no longer exists.` }, { status: 400 });
+  }
   const password = custom.password ?? newPassword();
   let loginId = custom.loginId ?? newLoginId();
   if (custom.loginId) {
@@ -106,6 +110,7 @@ export async function POST(req: Request) {
       number: i.number,
       date: new Date(i.date),
       amount: Math.round(i.amountRupees * 100),
+      ...(i.billId && { billId: i.billId }),
     })),
   });
   // The password is returned this once. Only its hash is stored.
@@ -120,7 +125,9 @@ export async function POST(req: Request) {
 
 const patch = z.object({
   id: z.string(),
-  action: z.enum(["revoke", "restore", "extend", "reset-password"]),
+  action: z.enum(["revoke", "restore", "extend", "reset-password", "attach-bill", "detach-bill"]),
+  key: z.string().max(40).optional(),
+  billId: z.string().optional(),
   days: z.number().int().min(1).max(90).optional(),
   password: z.string().max(40).optional(),
 });
@@ -132,6 +139,16 @@ export async function PATCH(req: Request) {
   if (!p.success || !mongoose.isValidObjectId(p.data.id)) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   await connectDB();
   const { id, action, days, password: chosen } = p.data;
+  if (action === "attach-bill" || action === "detach-bill") {
+    if (!p.data.key) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    if (action === "attach-bill") {
+      if (!p.data.billId || !mongoose.isValidObjectId(p.data.billId) || !(await BillModel.exists({ _id: p.data.billId }))) return NextResponse.json({ error: "Pick a saved bill." }, { status: 400 });
+      await PaymentRequestModel.updateOne({ _id: id, "invoices.key": p.data.key }, { $set: { "invoices.$.billId": p.data.billId } });
+    } else {
+      await PaymentRequestModel.updateOne({ _id: id, "invoices.key": p.data.key }, { $unset: { "invoices.$.billId": 1 } });
+    }
+    return NextResponse.json({ ok: true });
+  }
   if (action === "revoke") await PaymentRequestModel.updateOne({ _id: id }, { revoked: true });
   if (action === "restore") await PaymentRequestModel.updateOne({ _id: id }, { revoked: false, failedAttempts: 0, $unset: { lockedUntil: 1 } });
   if (action === "extend") await PaymentRequestModel.updateOne({ _id: id }, { expiresAt: new Date(Date.now() + (days ?? 7) * DAY), revoked: false });

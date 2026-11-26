@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Loader2, LockKeyhole, LogOut } from "lucide-react";
+import { Check, FileText, Loader2, LockKeyhole, LogOut } from "lucide-react";
 
-type Invoice = { key: string; number: string; date: string; amount: number; status: "UNPAID" | "PAID" };
+type Invoice = { key: string; number: string; date: string; amount: number; status: "UNPAID" | "PAID"; hasBill?: boolean };
 type Me = { name: string; expiresAt: string; invoices: Invoice[] };
 
 const inr = (n: number) => `Rs ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -134,6 +134,11 @@ function Invoices({ me, onSignOut }: { me: Me; onSignOut: () => void }) {
                   <span className="block truncate font-semibold text-white">Invoice {i.number}</span>
                   <span className="block text-sm text-neutral-500">{day(i.date)}</span>
                 </span>
+                {i.hasBill && (
+                  <a href={`/api/portal/bill?key=${i.key}`} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:border-brand-500 hover:text-accent" aria-label={`Open the bill for invoice ${i.number} as a PDF`}>
+                    <FileText size={14} /> Bill
+                  </a>
+                )}
                 {paid ? <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-black">Paid</span> : <span className="font-display text-lg font-bold text-white">{inr(i.amount)}</span>}
               </label>
             </motion.li>

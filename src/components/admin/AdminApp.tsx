@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
-import { Check, CircleDollarSign, Inbox, LayoutDashboard, Loader2, Link2, LogOut, MessageCircle, MessageSquareQuote, Star, Trash2, X } from "lucide-react";
+import { Check, CircleDollarSign, FileText, Inbox, LayoutDashboard, Loader2, Link2, LogOut, MessageCircle, MessageSquareQuote, Star, Trash2, X } from "lucide-react";
 import { CountUp } from "@/components/ui/motion";
 import { Stars } from "@/components/forms/Reviews";
 import { waLink } from "@/lib/whatsapp";
 import PaymentLinks from "@/components/admin/PaymentLinks";
+import Bills, { type BillRow } from "@/components/admin/Bills";
 import { Chips, Pager, RangeBar, SearchBox, initialRange, rangeLabel, rangeParams, useDebounced, usePaged, type Range } from "@/components/admin/Filters";
 
 type Lead = { _id: string; name: string; email?: string; phone: string; service?: string; message: string; status: string; createdAt: string };
@@ -103,12 +104,13 @@ function useSummary(range: Range, onUnauthorized: () => void) {
   return { data, error, reload: () => setTick((n) => n + 1) };
 }
 
-type Tab = "overview" | "leads" | "reviews" | "payments" | "links";
+type Tab = "overview" | "leads" | "reviews" | "payments" | "bills" | "links";
 const tabs: { id: Tab; label: string; icon: typeof Inbox }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "leads", label: "Enquiries", icon: Inbox },
   { id: "reviews", label: "Reviews", icon: MessageSquareQuote },
   { id: "payments", label: "Payments", icon: CircleDollarSign },
+  { id: "bills", label: "Bills", icon: FileText },
   { id: "links", label: "Payment links", icon: Link2 },
 ];
 
@@ -117,6 +119,7 @@ type TabProps = { range: Range; onUnauthorized: () => void; onChanged: () => voi
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [range, setRange] = useState<Range>(initialRange);
+  const [draft, setDraft] = useState<BillRow | null>(null); // a bill the owner is turning into a payment link
   const summary = useSummary(range, onLogout);
   async function logout() { await fetch("/api/admin/logout", { method: "POST" }); onLogout(); }
   const badge: Partial<Record<Tab, number>> = { leads: summary.data?.badges.newLeads, reviews: summary.data?.badges.pendingReviews };
@@ -144,7 +147,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           {tab === "leads" && <Leads {...props} />}
           {tab === "reviews" && <Reviews {...props} />}
           {tab === "payments" && <Payments {...props} />}
-          {tab === "links" && <PaymentLinks range={range} onUnauthorized={onLogout} />}
+          {tab === "bills" && <Bills range={range} onUnauthorized={onLogout} onMakeLink={(b) => { setDraft(b); setTab("links"); }} />}
+          {tab === "links" && <PaymentLinks range={range} onUnauthorized={onLogout} draft={draft} onDraftUsed={() => setDraft(null)} />}
         </motion.div>
       </AnimatePresence>
     </div>

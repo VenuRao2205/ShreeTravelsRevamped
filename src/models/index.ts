@@ -63,6 +63,7 @@ const paymentRequestSchema = new Schema(
           status: { type: String, enum: ["UNPAID", "PAID"], default: "UNPAID" },
           paidOrderId: String,
           paidAt: Date,
+          billId: { type: Schema.Types.ObjectId }, // the saved bill (PDF) shown with this invoice
         },
         { _id: false },
       ),
@@ -82,9 +83,38 @@ const reviewSchema = new Schema(
   { timestamps: true },
 );
 
+const billItemSchema = new Schema(
+  {
+    start: String, end: String, passenger: String, from: String, taxiNo: String, carType: String, dutySlip: String,
+    kind: String, rateLabel: String, kms: Number, hours: Number, rate: Number, amount: Number, toll: Number, parking: Number,
+  },
+  { _id: false },
+);
+
+// A tax invoice (bill) made in the admin. The PDF is drawn from this data on demand, so no files are stored.
+const billSchema = new Schema(
+  {
+    billNo: { type: String, required: true, unique: true, index: true, trim: true },
+    billDate: { type: String, required: true }, // YYYY-MM-DD
+    customerName: { type: String, required: true, trim: true },
+    customerCity: String, bookedBy: String, customerGstin: String, customerEmail: String, customerPhone: String,
+    items: { type: [billItemSchema], default: [] },
+    gstMode: { type: String, enum: ["cgst_sgst", "igst", "none"], default: "cgst_sgst" },
+    gstRate: { type: Number, default: 5 },
+    notes: String,
+    showStamp: { type: Boolean, default: true },
+    company: { type: Schema.Types.Mixed, default: {} },
+    totals: {
+      subtotal: Number, kms: Number, toll: Number, parking: Number, cgst: Number, sgst: Number, igst: Number, total: Number,
+    },
+  },
+  { timestamps: true },
+);
+
 export type Lead = InferSchemaType<typeof leadSchema>;
 export type PaymentDoc = InferSchemaType<typeof paymentSchema>;
 export type Review = InferSchemaType<typeof reviewSchema>;
+export type BillDoc = InferSchemaType<typeof billSchema>;
 export type PaymentRequestDoc = InferSchemaType<typeof paymentRequestSchema>;
 
 export const LeadModel: Model<Lead> =
@@ -95,3 +125,5 @@ export const ReviewModel: Model<Review> =
   mongoose.models.Review || mongoose.model<Review>("Review", reviewSchema);
 export const PaymentRequestModel: Model<PaymentRequestDoc> =
   mongoose.models.PaymentRequest || mongoose.model<PaymentRequestDoc>("PaymentRequest", paymentRequestSchema);
+export const BillModel: Model<BillDoc> =
+  mongoose.models.Bill || mongoose.model<BillDoc>("Bill", billSchema);

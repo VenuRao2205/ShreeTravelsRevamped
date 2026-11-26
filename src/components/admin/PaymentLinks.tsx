@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, KeyRound, Loader2, Mail, MessageCircle, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { Check, Copy, FileText, KeyRound, Loader2, Mail, MessageCircle, Paperclip, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { useRecentBills, type BillRow } from "@/components/admin/Bills";
 import { waLink } from "@/lib/whatsapp";
 import { Chips, Pager, SearchBox, rangeLabel, rangeParams, useDebounced, usePaged, type Range } from "@/components/admin/Filters";
 
 export type PayRequest = {
   _id: string; customerName: string; customerEmail: string; customerPhone?: string; loginId: string; expiresAt: string; revoked: boolean; lockedUntil?: string;
-  invoices: { key: string; number: string; date: string; amount: number; status: "UNPAID" | "PAID" }[];
+  invoices: { key: string; number: string; date: string; amount: number; status: "UNPAID" | "PAID"; billId?: string }[];
 };
-type Row = { number: string; date: string; amount: string };
+type Row = { number: string; date: string; amount: string; billId?: string };
 type Cred = { id: string; name: string; email: string; phone?: string; loginId: string; password: string; expiresAt: string };
 
 const inr = (n: number) => `Rs ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -21,8 +22,8 @@ const blank = (): Row => ({ number: "", date: today(), amount: "" });
 const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const generate = (n: number) => Array.from(crypto.getRandomValues(new Uint32Array(n)), (x) => ALPHA[x % ALPHA.length]).join("");
 
-export default function PaymentLinks({ range, onUnauthorized }: { range: Range; onUnauthorized: () => void }) {
-  const [open, setOpen] = useState(false);
+export default function PaymentLinks({ range, onUnauthorized, draft, onDraftUsed }: { range: Range; onUnauthorized: () => void; draft?: BillRow | null; onDraftUsed?: () => void }) {
+  const [open, setOpen] = useState(!!draft);
   const [created, setCreated] = useState<Cred | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "paid" | "expired" | "stopped">("all");
@@ -38,7 +39,7 @@ export default function PaymentLinks({ range, onUnauthorized }: { range: Range; 
       </div>
 
       <AnimatePresence>
-        {open && !created && <Create key="form" onCancel={() => setOpen(false)} onCreated={(c) => { setCreated(c); setOpen(false); list.reload(); }} />}
+        {open && !created && <Create key={draft?._id ?? "form"} draft={draft ?? null} onCancel={() => { setOpen(false); onDraftUsed?.(); }} onCreated={(c) => { setCreated(c); setOpen(false); onDraftUsed?.(); list.reload(); }} />}
         {created && <Credentials key="creds" c={created} onClose={() => setCreated(null)} />}
       </AnimatePresence>
 
@@ -56,14 +57,15 @@ export default function PaymentLinks({ range, onUnauthorized }: { range: Range; 
   );
 }
 
-function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: Cred) => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+function Create({ draft, onCancel, onCreated }: { draft: BillRow | null; onCancel: () => void; onCreated: (c: Cred) => void }) {
+  const [name, setName] = useState(draft?.customerName ?? "");
+  const [email, setEmail] = useState(draft?.customerEmail ?? "");
+  const [phone, setPhone] = useState(draft?.customerPhone ?? "");
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [days, setDays] = useState("7");
-  const [rows, setRows] = useState<Row[]>([blank()]);
+  const [rows, setRows] = useState<Row[]>([draft ? { number: draft.billNo, date: draft.billDate, amount: String(draft.totals?.total ?? ""), billId: draft._id } : blank()]);
+  const bills = useRecentBills(true);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (i: number, k: keyof Row, v: string) => setRows((r) => r.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
@@ -78,7 +80,7 @@ function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: 
         body: JSON.stringify({
           customerName: name, customerEmail: email, customerPhone: phone || undefined,
           loginId: loginId.trim() || undefined, password: password || undefined,
-          expiryDays: Number(days) || 7, invoices: rows.map((r) => ({ number: r.number, date: r.date, amountRupees: Number(r.amount) })),
+          expiryDays: Number(days) || 7, invoices: rows.map((r) => ({ number: r.number, date: r.date, amountRupees: Number(r.amount), ...(r.billId && { billId: r.billId }) })),
         }),
       });
       const data = await res.json();
@@ -123,6 +125,20 @@ function Create({ onCancel, onCreated }: { onCancel: () => void; onCreated: (c: 
               <input aria-label={`Invoice ${i + 1} date`} type="date" className="field" value={r.date} onChange={(e) => set(i, "date", e.target.value)} required />
               <input aria-label={`Invoice ${i + 1} amount in rupees`} type="number" min={1} step="0.01" placeholder="Amount (Rs)" className="field" value={r.amount} onChange={(e) => set(i, "amount", e.target.value)} required />
               <button type="button" onClick={() => setRows((x) => x.filter((_, j) => j !== i))} disabled={rows.length === 1} aria-label={`Remove invoice ${i + 1}`} className="btn-ghost !p-3 disabled:opacity-30"><X size={16} /></button>
+              <div className="col-span-2 sm:col-span-4">
+                <select aria-label={`Attach a saved bill to invoice ${i + 1}`} className="field !py-2 text-sm" value={r.billId ?? ""}
+                  onChange={(e) => {
+                    const b = bills?.find((x) => x._id === e.target.value);
+                    setRows((x) => x.map((row, j) => (j !== i ? row : b ? { number: b.billNo, date: b.billDate, amount: String(b.totals?.total ?? ""), billId: b._id } : { ...row, billId: undefined })));
+                    if (b && !name) setName(b.customerName);
+                    if (b?.customerEmail && !email) setEmail(b.customerEmail);
+                    if (b?.customerPhone && !phone) setPhone(b.customerPhone);
+                  }}>
+                  <option value="">{bills ? "No bill attached. Pick a saved bill to attach (optional)" : "Loading saved bills"}</option>
+                  {r.billId && !bills?.some((b) => b._id === r.billId) && <option value={r.billId}>Attached bill {r.number}</option>}
+                  {bills?.map((b) => <option key={b._id} value={b._id}>Bill {b.billNo} · {b.customerName} · {inr(b.totals?.total ?? 0)}</option>)}
+                </select>
+              </div>
             </div>
           ))}
         </div>
@@ -237,8 +253,10 @@ function Card({ r, reload }: { r: PayRequest; reload: () => void }) {
       <ul className="mt-4 divide-y divide-white/10 text-sm">
         {r.invoices.map((i) => (
           <li key={i.key} className="flex items-center justify-between gap-3 py-2">
-            <span className="text-neutral-300">{i.number} <span className="text-neutral-500">· {day(i.date)}</span></span>
-            <span className={i.status === "PAID" ? "text-accent" : "text-white"}>{inr(i.amount / 100)} {i.status === "PAID" && <Check size={14} className="inline" />}</span>
+            <span className="min-w-0 text-neutral-300">{i.number} <span className="text-neutral-500">· {day(i.date)}</span>
+              <AttachBill requestId={r._id} invoice={i} reload={reload} />
+            </span>
+            <span className={`shrink-0 ${i.status === "PAID" ? "text-accent" : "text-white"}`}>{inr(i.amount / 100)} {i.status === "PAID" && <Check size={14} className="inline" />}</span>
           </li>
         ))}
       </ul>
@@ -262,5 +280,45 @@ function Card({ r, reload }: { r: PayRequest; reload: () => void }) {
       {err && <p className="mt-3 text-danger" role="alert">{err}</p>}
       <AnimatePresence>{cred && <div className="mt-4"><Credentials c={cred} title="New password" onClose={() => setCred(null)} /></div>}</AnimatePresence>
     </motion.div>
+  );
+}
+
+/** Shows the bill attached to an invoice, or lets the owner attach one. */
+function AttachBill({ requestId, invoice, reload }: { requestId: string; invoice: PayRequest["invoices"][number]; reload: () => void }) {
+  const [picking, setPicking] = useState(false);
+  const [err, setErr] = useState("");
+  const bills = useRecentBills(picking);
+  async function patch(action: "attach-bill" | "detach-bill", billId?: string) {
+    setErr("");
+    const res = await fetch("/api/admin/requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: requestId, action, key: invoice.key, billId }) });
+    if (!res.ok) return setErr((await res.json().catch(() => ({}))).error ?? "That did not work.");
+    setPicking(false); reload();
+  }
+  function choose(id: string) {
+    const b = bills?.find((x) => x._id === id);
+    if (!b) return;
+    if (Math.abs((b.totals?.total ?? 0) - invoice.amount / 100) > 0.005 && !confirm(`Bill ${b.billNo} totals ${inr(b.totals?.total ?? 0)}, but this invoice is ${inr(invoice.amount / 100)}. Attach it anyway?`)) return;
+    patch("attach-bill", id);
+  }
+  return (
+    <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      {invoice.billId ? (
+        <>
+          <a href={`/api/admin/bills/${invoice.billId}/pdf`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-accent hover:underline"><FileText size={12} /> Bill attached</a>
+          <button type="button" onClick={() => patch("detach-bill")} className="text-neutral-500 hover:text-danger">Remove</button>
+        </>
+      ) : picking ? (
+        <>
+          <select aria-label={`Attach a saved bill to invoice ${invoice.number}`} className="field !w-auto !py-1.5 text-xs" defaultValue="" onChange={(e) => choose(e.target.value)}>
+            <option value="">{bills ? "Pick a saved bill" : "Loading"}</option>
+            {bills?.map((b) => <option key={b._id} value={b._id}>Bill {b.billNo} · {b.customerName} · {inr(b.totals?.total ?? 0)}</option>)}
+          </select>
+          <button type="button" onClick={() => setPicking(false)} className="text-neutral-500 hover:text-white">Cancel</button>
+        </>
+      ) : (
+        <button type="button" onClick={() => setPicking(true)} className="inline-flex items-center gap-1 text-neutral-500 hover:text-accent"><Paperclip size={12} /> Attach a bill</button>
+      )}
+      {err && <span className="text-danger" role="alert">{err}</span>}
+    </span>
   );
 }

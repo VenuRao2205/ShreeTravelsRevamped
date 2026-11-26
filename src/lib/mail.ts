@@ -18,7 +18,7 @@ function transport() {
   });
 }
 
-async function send(opts: { to: string; subject: string; html: string; replyTo?: string }) {
+async function send(opts: { to: string; subject: string; html: string; replyTo?: string; attachments?: { filename: string; content: Buffer; contentType?: string }[] }) {
   try {
     await transport().sendMail({
       from: `"Shree Travels" <${process.env.SMTP_USER}>`,
@@ -135,5 +135,17 @@ export async function sendPortalCredentials(o: { to: string; name: string; login
       <p><b>Login ID:</b> ${esc(o.loginId)}<br><b>Password:</b> ${esc(o.password)}</p>
       <p>This login works until ${until}. Payments are secure through PhonePe.</p>
       <p>Shree Travels, Nagpur</p>`,
+  });
+}
+
+/** Emails a tax invoice PDF. Throws if the mail server refuses it. */
+export async function sendBillEmail(o: { to: string; name: string; billNo: string; total: string; pdf: Buffer; filename: string }) {
+  await send({
+    to: o.to,
+    subject: `Tax invoice ${o.billNo} - Shree Travels`,
+    html: `<p>Hi ${esc(o.name)},</p>
+      <p>Please find your tax invoice <b>${esc(o.billNo)}</b> for <b>${esc(o.total)}</b> attached as a PDF.</p>
+      <p>Shree Travels, Nagpur</p>`,
+    attachments: [{ filename: o.filename, content: o.pdf, contentType: "application/pdf" }],
   });
 }

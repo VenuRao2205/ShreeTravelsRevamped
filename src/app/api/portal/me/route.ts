@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({
       name: doc.customerName,
       expiresAt: doc.expiresAt,
-      invoices: doc.invoices.map((i) => ({ key: i.key, number: i.number, date: i.date, amount: i.amount / 100, status: i.status })),
+      invoices: doc.invoices.map((i) => ({ key: i.key, number: i.number, date: i.date, amount: i.amount / 100, status: i.status, hasBill: !!i.billId })),
     });
   } catch (e) {
     console.error("portal me failed", e instanceof Error ? e.message : e);
