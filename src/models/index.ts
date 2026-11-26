@@ -87,6 +87,7 @@ const billItemSchema = new Schema(
   {
     start: String, end: String, passenger: String, from: String, taxiNo: String, carType: String, dutySlip: String,
     kind: String, rateLabel: String, kms: Number, hours: Number, rate: Number, amount: Number, toll: Number, parking: Number,
+    batta: Number, nightBata: Number, permit: Number, bookingId: String, tripDate: String, startKm: Number, endKm: Number, route: String, employeeId: String, empEmail: String,
   },
   { _id: false },
 );
@@ -113,12 +114,29 @@ const billSchema = new Schema(
   { timestamps: true },
 );
 
+// A customer's own MIS Excel sheet, kept as a template with the column mapping for it. One per customer.
+const misTemplateSchema = new Schema(
+  {
+    customerName: { type: String, required: true, trim: true },
+    customerKey: { type: String, required: true, unique: true, index: true }, // lower-case customer name
+    fileName: String,
+    file: { type: Buffer, required: true },
+    headerRow: Number,
+    dataStartRow: Number,
+    columns: [{ _id: false, col: Number, header: String, source: String, text: String, formula: String }],
+    people: [{ _id: false, name: String, employeeId: String, email: String, department: String }],
+  },
+  { timestamps: true },
+);
+
 export type Lead = InferSchemaType<typeof leadSchema>;
 export type PaymentDoc = InferSchemaType<typeof paymentSchema>;
 export type Review = InferSchemaType<typeof reviewSchema>;
 export type BillDoc = InferSchemaType<typeof billSchema>;
 export type PaymentRequestDoc = InferSchemaType<typeof paymentRequestSchema>;
 
+export const MisTemplateModel: Model<InferSchemaType<typeof misTemplateSchema>> =
+  mongoose.models.MisTemplate || mongoose.model("MisTemplate", misTemplateSchema);
 export const LeadModel: Model<Lead> =
   mongoose.models.Lead || mongoose.model<Lead>("Lead", leadSchema);
 export const PaymentModel: Model<PaymentDoc> =

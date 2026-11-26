@@ -167,6 +167,9 @@ export async function renderBillPdf(bill: BillInput): Promise<Uint8Array> {
     if (it.dutySlip) wrap(it.dutySlip.toUpperCase(), f.mono, SIZE, cols[4].w - 6).forEach((l) => cell[4].push({ text: l, font: f.mono, align: "c" }));
     if (it.toll > 0) cell[4].push({ text: `Toll Charges : ${fmt2(it.toll)}`, font: f.bold, size: 7.2 });
     if (it.parking > 0) cell[4].push({ text: `Parking : ${fmt2(it.parking)}`, font: f.bold, size: 7.2 });
+    if (it.batta > 0) cell[4].push({ text: `O/S Batta : ${fmt2(it.batta)}`, font: f.bold, size: 7.2 });
+    if (it.nightBata > 0) cell[4].push({ text: `Night Bata : ${fmt2(it.nightBata)}`, font: f.bold, size: 7.2 });
+    if (it.permit > 0) cell[4].push({ text: `Permit : ${fmt2(it.permit)}`, font: f.bold, size: 7.2 });
     cell[5].push({ text: fmt2(it.kms), font: f.mono, align: "r" });
     const label = it.rateLabel || KIND_LABEL[it.kind as Kind] || "";
     if (label) wrap(label.toUpperCase(), f.mono, SIZE, cols[6].w - 6).forEach((l) => cell[6].push({ text: l, font: f.mono, align: "c" }));
@@ -216,6 +219,12 @@ export async function renderBillPdf(bill: BillInput): Promise<Uint8Array> {
   if (notes) {
     wrap(`NOTE :\n${notes}`, f.mono, 7.8, leftW).forEach((l) => { page.drawText(l, { x: M + 2, y: ly, size: 7.8, font: f.mono, color: INK }); ly -= 10.5; });
   }
+  if (bill.rcm && t.rcmTax > 0) {
+    // Reverse charge: no tax rows and nothing added to the total; the customer pays the GST themselves
+    ly -= 4;
+    const split = bill.gstMode === "igst" ? `IGST - ${t.rcmIgst}` : `CGST - ${t.rcmCgst} SGST - ${t.rcmSgst}`;
+    wrap(`${RCM_STATEMENT} ${split} = ${t.rcmTax}`, f.bold, 7.6, leftW).forEach((l) => { page.drawText(l, { x: M + 2, y: ly, size: 7.6, font: f.bold, color: INK }); ly -= 10; });
+  }
 
   // right: charges and tax
   const rx = A4.w - M - 205, rr = A4.w - M - 2;
@@ -231,21 +240,6 @@ export async function renderBillPdf(bill: BillInput): Promise<Uint8Array> {
   if (t.parking > 0) charge("Parking_Charges", null, t.parking);
   if (bill.gstMode === "cgst_sgst" && !bill.rcm) { charge("CGST", fmt2(bill.gstRate / 2), t.cgst); charge("SGST", fmt2(bill.gstRate / 2), t.sgst); }
   if (bill.gstMode === "igst" && !bill.rcm) charge("IGST", fmt2(bill.gstRate), t.igst);
-  if (bill.rcm && t.rcmTax > 0) {
-    // Reverse charge: shown for the customer, but kept out of the total
-    ry -= 4;
-    wrap(RCM_STATEMENT, f.reg, 6.8, 205).forEach((l) => { page.drawText(l, { x: rx, y: ry, size: 6.8, font: f.reg, color: GREY }); ry -= 8.5; });
-    ry -= 3;
-    const gstLine = (label: string, rate: string, amt: number) => {
-      page.drawText(label, { x: rx, y: ry, size: 7.8, font: f.mono, color: GREY });
-      page.drawText(`@  ${rate}`, { x: rx + 100, y: ry, size: 7.8, font: f.mono, color: GREY });
-      const a = fmt2(amt);
-      page.drawText(a, { x: rr - f.mono.widthOfTextAtSize(a, 8.5), y: ry, size: 8.5, font: f.mono, color: GREY });
-      ry -= 13;
-    };
-    if (bill.gstMode === "cgst_sgst") { gstLine("CGST (RCM)", fmt2(bill.gstRate / 2), t.rcmCgst); gstLine("SGST (RCM)", fmt2(bill.gstRate / 2), t.rcmSgst); }
-    if (bill.gstMode === "igst") gstLine("IGST (RCM)", fmt2(bill.gstRate), t.rcmIgst);
-  }
 
   // final total
   let fy = Math.min(ly, ry) - 20;

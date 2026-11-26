@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, FileText, Scale } from "lucide-react";
+import { BarChart3, FileSpreadsheet, FileText, Scale } from "lucide-react";
+import MisTemplates from "@/components/admin/MisTemplates";
 import BillsList, { type BillRow } from "@/components/admin/Bills";
 import { MisReport, RcmRegister, Tile, periodFor, useReport, type Period } from "@/components/admin/BillingReports";
 import { inr } from "@/lib/billing";
 import type { Range } from "@/components/admin/Filters";
 
-type Sub = "bills" | "mis" | "rcm";
+type Sub = "bills" | "mis" | "templates" | "rcm";
 const SUBS: { id: Sub; label: string; icon: typeof FileText }[] = [
   { id: "bills", label: "Bills", icon: FileText },
   { id: "mis", label: "MIS reports", icon: BarChart3 },
+  { id: "templates", label: "Customer MIS sheets", icon: FileSpreadsheet },
   { id: "rcm", label: "RCM register", icon: Scale },
 ];
 
@@ -44,6 +46,7 @@ export default function Billing({ range, onUnauthorized, onMakeLink }: { range: 
         </>
       )}
       {sub === "mis" && <MisReport period={period} setPeriod={setPeriod} onUnauthorized={onUnauthorized} customers={[]} />}
+      {sub === "templates" && <MisTemplates onUnauthorized={onUnauthorized} />}
       {sub === "rcm" && <RcmRegister period={period} setPeriod={setPeriod} onUnauthorized={onUnauthorized} customers={[]} />}
     </div>
   );

@@ -14,7 +14,8 @@ export type BillRow = {
   totals?: { total: number }; createdAt: string;
 };
 
-type ItemF = { start: string; end: string; passenger: string; from: string; taxiNo: string; carType: string; dutySlip: string; kind: Kind; rateLabel: string; kms: string; hours: string; rate: string; amount: string; toll: string; parking: string };
+type ItemF = { start: string; end: string; passenger: string; from: string; taxiNo: string; carType: string; dutySlip: string; kind: Kind; rateLabel: string; kms: string; hours: string; rate: string; amount: string; toll: string; parking: string;
+  batta: string; nightBata: string; permit: string; bookingId: string; tripDate: string; startKm: string; endKm: string; route: string; employeeId: string; empEmail: string };
 type BillF = {
   billNo: string; billDate: string; customerName: string; customerCity: string; bookedBy: string; customerGstin: string; customerEmail: string; customerPhone: string;
   items: ItemF[]; gstMode: "cgst_sgst" | "igst" | "none"; gstRate: string; rcm: boolean; notes: string; showStamp: boolean; company: Company;
@@ -28,6 +29,7 @@ const str = (n: unknown) => (n === undefined || n === null || n === 0 ? "" : Str
 const blankItem = (from?: Partial<ItemF>): ItemF => ({
   start: from?.start ?? "", end: from?.end ?? "", passenger: from?.passenger ?? "", from: from?.from ?? "LOCAL", taxiNo: from?.taxiNo ?? "", carType: from?.carType ?? "",
   dutySlip: "", kind: "fixed", rateLabel: KIND_LABEL.fixed, kms: "", hours: "", rate: "", amount: "", toll: "", parking: "",
+  batta: "", nightBata: "", permit: "", bookingId: "", tripDate: "", startKm: "", endKm: "", route: "", employeeId: from?.employeeId ?? "", empEmail: from?.empEmail ?? "",
 });
 const blankBill = (billNo: string): BillF => ({
   billNo, billDate: today(), customerName: "", customerCity: "", bookedBy: "", customerGstin: "", customerEmail: "", customerPhone: "",
@@ -42,7 +44,9 @@ function toInput(f: BillF): BillInput {
     customerGstin: f.customerGstin.trim().toUpperCase(), customerEmail: f.customerEmail.trim(), customerPhone: f.customerPhone.trim(),
     items: f.items.map((i): Item => ({
       start: i.start, end: i.end, passenger: i.passenger.trim(), from: i.from.trim(), taxiNo: i.taxiNo.trim(), carType: i.carType.trim(), dutySlip: i.dutySlip.trim(),
-      kind: i.kind, rateLabel: i.rateLabel.trim(), kms: num(i.kms), hours: num(i.hours), rate: num(i.rate), amount: num(i.amount), toll: num(i.toll), parking: num(i.parking),
+      kind: i.kind, rateLabel: i.rateLabel.trim(), kms: num(i.kms) || (num(i.endKm) > num(i.startKm) ? num(i.endKm) - num(i.startKm) : 0), hours: num(i.hours), rate: num(i.rate), amount: num(i.amount), toll: num(i.toll), parking: num(i.parking),
+      batta: num(i.batta), nightBata: num(i.nightBata), permit: num(i.permit), bookingId: i.bookingId.trim(), tripDate: i.tripDate.trim(), startKm: num(i.startKm), endKm: num(i.endKm),
+      route: i.route.trim(), employeeId: i.employeeId.trim(), empEmail: i.empEmail.trim(),
     })),
     gstMode: f.gstMode, gstRate: num(f.gstRate), rcm: f.rcm && f.gstMode !== "none", notes: f.notes, showStamp: f.showStamp, company: f.company,
   };
@@ -59,6 +63,8 @@ function fromDoc(d: Record<string, unknown>, billNo?: string): BillF {
           start: String(i.start ?? ""), end: String(i.end ?? ""), passenger: String(i.passenger ?? ""), from: String(i.from ?? ""), taxiNo: String(i.taxiNo ?? ""), carType: String(i.carType ?? ""),
           dutySlip: billNo ? "" : String(i.dutySlip ?? ""), kind: (i.kind as Kind) ?? "fixed", rateLabel: String(i.rateLabel ?? ""),
           kms: str(i.kms), hours: str(i.hours), rate: str(i.rate), amount: str(i.amount), toll: str(i.toll), parking: str(i.parking),
+          batta: str(i.batta), nightBata: str(i.nightBata), permit: str(i.permit), bookingId: String(i.bookingId ?? ""), tripDate: String(i.tripDate ?? ""), startKm: str(i.startKm), endKm: str(i.endKm),
+          route: String(i.route ?? ""), employeeId: String(i.employeeId ?? ""), empEmail: String(i.empEmail ?? ""),
         }))
       : [blankItem()],
     gstMode: (d.gstMode as BillF["gstMode"]) ?? "cgst_sgst", gstRate: String(d.gstRate ?? 5), rcm: d.rcm === true, notes: String(d.notes ?? DEFAULT_NOTES), showStamp: d.showStamp !== false,
@@ -293,7 +299,7 @@ function BillForm({ id, initial, customers, onCancel, onSaved, onUnauthorized }:
             <label className="flex cursor-pointer items-start gap-3 text-neutral-200">
               <input type="checkbox" className="mt-1 h-5 w-5 accent-[#FF6B00]" checked={f.rcm} onChange={(e) => set("rcm", e.target.checked)} />
               <span><span className="font-semibold">Reverse charge (RCM): the customer pays the GST</span><br />
-                <span className="text-sm text-neutral-400">The bill shows the tax but does not add it to the total. Used when a proprietor or partnership rents a passenger car to a company at 5% without input credit. Your CA can confirm whether it applies to this customer.</span></span>
+                <span className="text-sm text-neutral-400">The bill has no tax rows and the total is trips + toll + parking. A note at the bottom tells the customer the CGST/SGST (or IGST) amount they pay themselves. Used when a proprietor or partnership rents a passenger car to a company at 5% without input credit. Your CA can confirm whether it applies to this customer.</span></span>
             </label>
             {!f.rcm && looksLikeCompany(f.customerName) && <p className="mt-3 text-sm text-accent" role="status">This customer looks like a company. If you charge 5% without input credit, GST may be payable by the customer under reverse charge. Check with your CA before adding GST to the bill.</p>}
           </div>
@@ -346,6 +352,22 @@ function BillForm({ id, initial, customers, onCancel, onSaved, onUnauthorized }:
                   <L label="Toll charges"><input type="number" min={0} step="0.01" className="field" value={it.toll} onChange={(e) => setItem(i, { toll: e.target.value })} /></L>
                   <L label="Parking charges"><input type="number" min={0} step="0.01" className="field" value={it.parking} onChange={(e) => setItem(i, { parking: e.target.value })} /></L>
                 </div>
+                <details className="mt-3 rounded-xl border border-white/10 px-4 py-3" open={!!(it.batta || it.nightBata || it.permit || it.bookingId || it.startKm || it.endKm || it.route || it.tripDate)}>
+                  <summary className="cursor-pointer text-sm font-semibold text-neutral-200">Extra charges and details for the customer&apos;s MIS sheet</summary>
+                  <p className="mt-2 text-sm text-neutral-500">Outstation batta, night bata and permit are added to this trip&apos;s amount and charged GST. Everything else only fills the MIS Excel. If you enter odometer readings and leave Total KMs empty, the KMs are worked out.</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <L label="O/S batta"><input type="number" min={0} step="0.01" className="field" value={it.batta} onChange={(e) => setItem(i, { batta: e.target.value })} /></L>
+                    <L label="Night bata"><input type="number" min={0} step="0.01" className="field" value={it.nightBata} onChange={(e) => setItem(i, { nightBata: e.target.value })} /></L>
+                    <L label="Permit charges"><input type="number" min={0} step="0.01" className="field" value={it.permit} onChange={(e) => setItem(i, { permit: e.target.value })} /></L>
+                    <L label="Booking ID"><input className="field font-mono" value={it.bookingId} onChange={(e) => setItem(i, { bookingId: e.target.value })} /></L>
+                    <L label="Start KMs (odometer)"><input type="number" min={0} className="field" value={it.startKm} onChange={(e) => setItem(i, { startKm: e.target.value })} /></L>
+                    <L label="End KMs (odometer)"><input type="number" min={0} className="field" value={it.endKm} onChange={(e) => setItem(i, { endKm: e.target.value })} /></L>
+                    <L label="Trip date as customer writes it"><input className="field" value={it.tripDate} onChange={(e) => setItem(i, { tripDate: e.target.value })} placeholder="07/09/2026 TO 09/09/2026" /></L>
+                    <L label="Employee ID"><input className="field" value={it.employeeId} onChange={(e) => setItem(i, { employeeId: e.target.value })} /></L>
+                    <L label="Employee email"><input type="email" className="field" value={it.empEmail} onChange={(e) => setItem(i, { empEmail: e.target.value })} /></L>
+                    <div className="sm:col-span-2 lg:col-span-3"><L label="Travel details (route)"><input className="field" value={it.route} onChange={(e) => setItem(i, { route: e.target.value })} placeholder="OFFICE-BESA-AMRAVATI-BESA-OFFICE" /></L></div>
+                  </div>
+                </details>
               </div>
             );
           })}

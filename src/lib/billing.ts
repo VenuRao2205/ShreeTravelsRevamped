@@ -17,7 +17,7 @@ export const COMPANY_DEFAULTS = {
 };
 export type Company = typeof COMPANY_DEFAULTS;
 
-export const RCM_STATEMENT = "GST on this supply is payable by the recipient under reverse charge (Notification No. 13/2017-Central Tax (Rate)). Tax shown below is not added to the total.";
+export const RCM_STATEMENT = "As per notification No.22/2019 Central Tax (Rate) 30th Sep 2019, GST under reverse charge has to be paid by service receiver.";
 
 export const DEFAULT_NOTES = [
   "1) Enclosed total duty slip",
@@ -53,6 +53,17 @@ export const itemSchema = z.object({
   amount: money.default(0), // only used when kind is "custom"; otherwise worked out
   toll: money.default(0),
   parking: money.default(0),
+  // Optional extras. The three charges are taxable and are added to the trip amount; the rest only feed customers' MIS sheets.
+  batta: money.default(0), // outstation batta
+  nightBata: money.default(0),
+  permit: money.default(0),
+  bookingId: text(40),
+  tripDate: text(40), // as the customer writes it, e.g. "07/09/2026 TO 09/09/2026"; blank means the start date
+  startKm: money.default(0),
+  endKm: money.default(0),
+  route: text(300),
+  employeeId: text(30),
+  empEmail: text(120),
 });
 export type Item = z.infer<typeof itemSchema>;
 
@@ -83,7 +94,9 @@ export type BillInput = z.infer<typeof billSchema>;
 
 const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export function lineAmount(i: Pick<Item, "kind" | "kms" | "hours" | "rate" | "amount">) {
+type Base = Pick<Item, "kind" | "kms" | "hours" | "rate" | "amount">;
+/** The trip charge itself, before outstation batta, night bata and permit. */
+export function baseAmount(i: Base) {
   switch (i.kind) {
     case "fixed": return r2(i.rate);
     case "per_km":
@@ -92,6 +105,9 @@ export function lineAmount(i: Pick<Item, "kind" | "kms" | "hours" | "rate" | "am
     default: return r2(i.amount);
   }
 }
+export const extrasOf = (i: Partial<Pick<Item, "batta" | "nightBata" | "permit">>) => r2((i.batta ?? 0) + (i.nightBata ?? 0) + (i.permit ?? 0));
+/** What the bill row shows as its amount: the trip charge plus the taxable extras. */
+export const lineAmount = (i: Base & Partial<Pick<Item, "batta" | "nightBata" | "permit">>) => r2(baseAmount(i) + extrasOf(i));
 
 export type Totals = {
   subtotal: number; kms: number; toll: number; parking: number;
