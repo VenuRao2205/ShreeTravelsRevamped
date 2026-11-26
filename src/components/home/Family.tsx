@@ -14,8 +14,8 @@ const trust = [
     text: "Call us and you speak to the people who run the business. Every trip is our responsibility.",
   },
   {
-    title: "Honest pricing",
-    text: "Rates are published up front, every payment gets a proper invoice, and our policies are in writing.",
+    title: "No surprises on the bill",
+    text: "Our rates are right there on the website, and every payment comes with a proper invoice.",
   },
 ];
 
