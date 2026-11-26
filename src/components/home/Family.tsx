@@ -14,8 +14,8 @@ const trust = [
     text: "Call us and you speak to the people who run the business. Every trip is our responsibility.",
   },
   {
-    title: "No surprises on the bill",
-    text: "Our rates are right there on the website, and every payment comes with a proper invoice.",
+    title: "Your best experience",
+    text: "All we want is for you to enjoy the ride, from the first call to the last stop.",
   },
 ];
 
